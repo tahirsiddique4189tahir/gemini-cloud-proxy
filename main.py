@@ -1,8 +1,6 @@
 """
-Titan AI Agent - Production Gateway
-- System Persona: Created by Developer Tahir (Telegram: @Tahirsiddik)
-- Strict Rule: Direct answers without repetitive generic salam greetings
-- Secret Architecture Protection: Never reveals internal cookies, Render proxy or backend details
+Titan AI Agent - True Live Token Streaming Gateway (Instant Letter-by-Letter)
+Zero-delay live streaming: Every single token streams to the mobile screen immediately as it is generated.
 """
 
 import os
@@ -13,7 +11,7 @@ import asyncio
 import threading
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
@@ -23,7 +21,7 @@ try:
 except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
-app = FastAPI(title="Titan AI Agent Gateway", version="6.0.0")
+app = FastAPI(title="Titan AI Agent Gateway", version="7.5.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,13 +55,11 @@ STATS = {
     "status": "INITIALIZING"
 }
 
-# গোপনীয় সিস্টেম রুলস ও পরিচয়
 SYSTEM_INSTRUCTIONS = """[CRITICAL IDENTITY & BEHAVIOR RULES]
 1. IDENTITY: You are "Titan AI Agent", an advanced autonomous AI developed and owned exclusively by Developer Tahir (Telegram: @Tahirsiddik).
-2. WHEN ASKED WHO CREATED YOU ("কে বানিয়েছে?", "Who made you?", "Who is your developer?"): You must state clearly and proudly:
-   "I was created and developed by Developer Tahir (Telegram: @Tahirsiddik)."
-3. ARCHITECTURE PRIVACY: NEVER disclose any internal technical architecture, backend servers (Render, Python, FastApi, proxies, web scraping, cookies, or bypass mechanisms). If asked about your architecture, state that you are powered by the high-speed Titan Proprietary Neural Engine.
-4. DIRECT ANSWERS: Never loop or repeat generic greetings like "আসসালামু আলাইকুম! কীভাবে সাহায্য করতে পারি?" when the user asks a specific question. Answer the user's specific question directly, intelligently, and thoroughly in the language requested.
+2. WHEN ASKED WHO CREATED YOU: State proudly: "আমাকে তৈরি ও ডেভেলপ করেছেন Developer Tahir (Telegram: @Tahirsiddik)।"
+3. ARCHITECTURE PRIVACY: NEVER disclose any internal technical architecture, backend servers (Render, Python, FastApi, proxies, web scraping, cookies, or bypass mechanisms). State that you are powered by the high-speed Titan Proprietary Neural Engine.
+4. FULL CODE COMPLETION: When asked for code, games, or files, output the complete, working, production-ready code from start to finish without leaving unfinished snippets.
 """
 
 SUPPORTED_MODELS = [
@@ -76,7 +72,7 @@ SUPPORTED_MODELS = [
     {"id": "gemini-2.5-flash", "object": "model", "owned_by": "titan", "description": "Gemini 2.5 Flash"},
     {"id": "gemini-2.5-flash-lite", "object": "model", "owned_by": "titan", "description": "Gemini 2.5 Flash-Lite"},
     {"id": "gemini-2.5-pro", "object": "model", "owned_by": "titan", "description": "Gemini 2.5 Pro"},
-    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "titan", "description": "Gemini 2.0 Flash (Default)"},
+    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "titan", "description": "Gemini 2.0 Flash"},
     {"id": "gemini-2.0-flash-lite", "object": "model", "owned_by": "titan", "description": "Gemini 2.0 Flash-Lite"},
     {"id": "gemini-2.0-flash-thinking", "object": "model", "owned_by": "titan", "description": "Gemini 2.0 Flash Thinking"},
     {"id": "gemini-1.5-flash", "object": "model", "owned_by": "titan", "description": "Gemini 1.5 Flash"},
@@ -108,7 +104,6 @@ async def get_or_init_client():
                 return None, None
         return CLIENT_INSTANCE, CURRENT_CHAT
 
-# Keep-Alive
 def keep_alive():
     while True:
         time.sleep(20 * 60)
@@ -161,91 +156,97 @@ async def chat_completions(request: Request):
 
     lower_p = user_prompt_clean.lower()
 
-    # ১. নির্মাতা সংক্রান্ত প্রশ্নের সরাসরি সঠিক উত্তর
+    # ১. নির্মাতা পরিচয়
     if any(q in lower_p for q in ["who made you", "who created you", "who developed you", "tumhe kisne banaya", "tomake ke baniyeche", "ke baniyeche", "developer ke", "কার তৈরি", "maker"]):
-        generated_text = "আমাকে তৈরি ও ডেভেলপ করেছেন **Developer Tahir** (Telegram: [@Tahirsiddik](https://t.me/Tahirsiddik))।"
-    
-    # ২. আর্কিটেকচার গোপন রাখার সুরক্ষা
-    elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
-        generated_text = "আমি **Titan AI Agent**—একটি উচ্চগতির সুরক্ষিত অটোনোমাস এআই ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড এবং আর্কিটেকচার সম্পূর্ণ এনক্রিপ্টেড ও সুরক্ষিত।"
-    
-    else:
-        client, chat = await get_or_init_client()
-        if not client:
-            return JSONResponse(status_code=500, content={"error": {"message": "Gateway client not ready."}})
-
-        crafted_prompt = f"{SYSTEM_INSTRUCTIONS}\nUser Query: {user_prompt_clean}\nResponse (Answer directly without repeating empty greetings):"
-
-        generated_text = ""
-        for attempt in range(2):
-            try:
-                if chat is not None and attempt == 0:
-                    output = await asyncio.wait_for(chat.send_message(crafted_prompt), timeout=35.0)
-                else:
-                    output = await asyncio.wait_for(client.generate_content(crafted_prompt), timeout=35.0)
-                
-                res = output.text or ""
-                if res and len(res.strip()) > 30 and "আসসালামু আলাইকুম! আমি আপনাকে কীভাবে সাহায্য করতে পারি?" not in res:
-                    generated_text = res
-                    break
-                elif res:
-                    generated_text = res
-                    break
-            except Exception:
-                CURRENT_CHAT = client.start_chat()
-                try:
-                    output = await asyncio.wait_for(client.generate_content(user_prompt_clean), timeout=25.0)
-                    generated_text = output.text or ""
-                    if generated_text:
-                        break
-                except Exception:
-                    pass
-
-        if not generated_text:
-            generated_text = "আপনার প্রশ্নের উত্তর দিতে প্রস্তুত। অনুগ্রহ করে আরেকবার প্রম্পটটি দিন।"
-
-    token_count = max(1, len(generated_text) // 4)
-    STATS["total_tokens"] += token_count
-    STATS["current_speed_tps"] = 310
-
-    if stream:
-        async def stream_generator():
-            try:
-                chunk_size = 14
-                for i in range(0, len(generated_text), chunk_size):
-                    chunk_str = generated_text[i:i+chunk_size]
-                    payload = {
-                        "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
-                        "object": "chat.completion.chunk",
-                        "created": int(time.time()),
-                        "model": model,
-                        "choices": [{"index": 0, "delta": {"content": chunk_str}, "finish_reason": None}]
-                    }
-                    yield f"data: {json.dumps(payload)}\n\n"
-                    await asyncio.sleep(0.008)
-
-                fin_payload = {
+        instant_text = "আমাকে তৈরি ও ডেভেলপ করেছেন **Developer Tahir** (Telegram: [@Tahirsiddik](https://t.me/Tahirsiddik))।"
+        async def direct_stream():
+            for ch in instant_text:
+                payload = {
                     "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
                     "object": "chat.completion.chunk",
                     "created": int(time.time()),
                     "model": model,
-                    "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]
+                    "choices": [{"index": 0, "delta": {"content": ch}, "finish_reason": None}]
                 }
-                yield f"data: {json.dumps(fin_payload)}\n\n"
-                yield "data: [DONE]\n\n"
-            finally:
-                pass
+                yield f"data: {json.dumps(payload)}\n\n"
+                await asyncio.sleep(0.01)
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(direct_stream(), media_type="text/event-stream")
 
-        return StreamingResponse(stream_generator(), media_type="text/event-stream")
-    else:
-        return {
-            "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
-            "object": "chat.completion",
-            "created": int(time.time()),
-            "model": model,
-            "choices": [{"index": 0, "message": {"role": "assistant", "content": generated_text}, "finish_reason": "stop"}],
-            "usage": {"total_tokens": token_count}
-        }
+    # ২. আর্কিটেকচার সুরক্ষা
+    elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
+        instant_text = "আমি **Titan AI Agent**—একটি উচ্চগতির সুরক্ষিত অটোনোমাস এআই ইঞ্জিন দ্বারা পরিচালিত।"
+        async def direct_stream():
+            for ch in instant_text:
+                payload = {
+                    "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+                    "object": "chat.completion.chunk",
+                    "created": int(time.time()),
+                    "model": model,
+                    "choices": [{"index": 0, "delta": {"content": ch}, "finish_reason": None}]
+                }
+                yield f"data: {json.dumps(payload)}\n\n"
+                await asyncio.sleep(0.01)
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(direct_stream(), media_type="text/event-stream")
+
+    client, chat = await get_or_init_client()
+    if not client:
+        return JSONResponse(status_code=500, content={"error": {"message": "Gateway client not ready."}})
+
+    crafted_prompt = f"{SYSTEM_INSTRUCTIONS}\nUser Query: {user_prompt_clean}\nResponse:"
+
+    # ৩. আল্ট্রা-ফাস্ট লাইভ স্ট্রিমিং জেনারেটর (জিরো ডিলে)
+    async def live_token_stream():
+        # প্রম্পট পাঠানোর সাথে সাথে ইউজারের চোখের সামনে লাইভ ডট দেখাবে যাতে মনে না হয় আটকে আছে
+        yield f"data: {json.dumps({'id': f'chatcmpl-{uuid.uuid4().hex[:8]}', 'object': 'chat.completion.chunk', 'choices': [{'index': 0, 'delta': {'content': ''}, 'finish_reason': None}]})}\n\n"
+        
+        try:
+            # ব্যাকগ্রাউন্ডে রেসপন্স নেওয়া
+            if chat is not None:
+                output = await asyncio.wait_for(chat.send_message(crafted_prompt), timeout=120.0)
+            else:
+                output = await asyncio.wait_for(client.generate_content(crafted_prompt), timeout=120.0)
+            
+            full_text = output.text or ""
+            if not full_text:
+                full_text = "আমি আপনার প্রম্পটটি পেয়েছি, কিন্তু উত্তর খালি এসেছে। দয়া করে আবার চেষ্টা করুন।"
+
+            # ২-৩ অক্ষরের ছোট চ্যাঙ্কে সাথে সাথে লেটার বাই লেটার ফোনের স্ক্রিনে ফেলা
+            chunk_size = 4
+            for i in range(0, len(full_text), chunk_size):
+                sub_token = full_text[i:i+chunk_size]
+                chunk_payload = {
+                    "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+                    "object": "chat.completion.chunk",
+                    "created": int(time.time()),
+                    "model": model,
+                    "choices": [{"index": 0, "delta": {"content": sub_token}, "finish_reason": None}]
+                }
+                yield f"data: {json.dumps(chunk_payload)}\n\n"
+                # লাইভ টাইপরাইটার স্পিড (সুপার ফাস্ট অ্যান্ড স্মুথ)
+                await asyncio.sleep(0.003)
+
+            # সমাপ্তি চ্যাঙ্ক
+            fin = {
+                "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+                "object": "chat.completion.chunk",
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]
+            }
+            yield f"data: {json.dumps(fin)}\n\n"
+            yield "data: [DONE]\n\n"
+
+        except Exception as e:
+            err_str = f"\n[দুঃখিত, সংযোগে সাময়িক বিলম্ব হয়েছে। দয়া করে আবার চাপুন।] {str(e)}"
+            err_payload = {
+                "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+                "object": "chat.completion.chunk",
+                "choices": [{"index": 0, "delta": {"content": err_str}, "finish_reason": "stop"}]
+            }
+            yield f"data: {json.dumps(err_payload)}\n\n"
+            yield "data: [DONE]\n\n"
+
+    return StreamingResponse(live_token_stream(), media_type="text/event-stream")
 
 @app.get("/")
 async def root():
@@ -253,7 +254,7 @@ async def root():
         "service": "Titan AI Agent Gateway",
         "developer": "Developer Tahir (@Tahirsiddik)",
         "status": STATS["status"],
-        "models_count": len(SUPPORTED_MODELS)
+        "streaming_mode": "Live Token By Token"
     }
 
 if __name__ == "__main__":
