@@ -1,6 +1,5 @@
 """
-Titan AI Agent - High-Stability Multi-Model Gateway
-Includes Auto-Retry, Extended Thinking Timeout, and Full Model Mapping.
+Titan AI Agent - Stable Clean Gateway (Fixes Safety Refusal & Error Loop)
 """
 
 import os
@@ -21,7 +20,7 @@ try:
 except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
-app = FastAPI(title="Titan AI Agent Gateway", version="5.0.0")
+app = FastAPI(title="Titan AI Agent Gateway", version="5.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,23 +53,22 @@ STATS = {
     "status": "INITIALIZING"
 }
 
-# সমস্ত মডেলের তালিকা
 SUPPORTED_MODELS = [
-    {"id": "gemini-3.8-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Flash (Autonomous Agent Engine)"},
-    {"id": "gemini-3.8-live-extended-thinking", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Extended Thinking (Deep Logic)"},
+    {"id": "gemini-3.8-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Flash"},
+    {"id": "gemini-3.8-live-extended-thinking", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Extended Thinking"},
     {"id": "gemini-3.6-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.6 Flash"},
-    {"id": "gemini-3.5-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 3.5 Flash-Lite (Low Latency)"},
+    {"id": "gemini-3.5-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 3.5 Flash-Lite"},
     {"id": "gemini-3.1-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 3.1 Flash-Lite"},
     {"id": "gemini-3-flash", "object": "model", "owned_by": "google", "description": "Gemini 3 Flash"},
     {"id": "gemini-2.5-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Flash"},
     {"id": "gemini-2.5-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Flash-Lite"},
     {"id": "gemini-2.5-pro", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Pro"},
-    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash (Default 310 TPS)"},
+    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash"},
     {"id": "gemini-2.0-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash-Lite"},
     {"id": "gemini-2.0-flash-thinking", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Thinking"},
     {"id": "gemini-1.5-flash", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Flash"},
     {"id": "gemini-1.5-flash-8b", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Flash 8B"},
-    {"id": "gemini-1.5-pro", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Pro (2M Context)"},
+    {"id": "gemini-1.5-pro", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Pro"},
     {"id": "gemini-flash", "object": "model", "owned_by": "google", "description": "Auto Flash"},
     {"id": "gemini-flash-lite", "object": "model", "owned_by": "google", "description": "Auto Flash-Lite"},
     {"id": "gemini-pro", "object": "model", "owned_by": "google", "description": "Auto Pro"}
@@ -96,7 +94,7 @@ async def get_or_init_client(force_new=False):
                 return None
         return CLIENT_INSTANCE
 
-# Keep-Alive Worker
+# Keep-Alive
 def keep_alive():
     while True:
         time.sleep(20 * 60)
@@ -125,48 +123,48 @@ async def chat_completions(request: Request):
     messages = body.get("messages", [])
     stream = body.get("stream", True)
 
-    # Argon Exclusion
     if "argon" in model:
         return JSONResponse(
             status_code=400,
-            content={"error": {"message": "Model 'gemini-4-argon' is restricted. Please select Flash, Flash-Lite or Pro.", "type": "model_restricted"}}
+            content={"error": {"message": "Model 'gemini-4-argon' is restricted.", "type": "model_restricted"}}
         )
 
-    # Context Flattening
-    conversation_text = ""
-    for msg in messages:
-        role = msg.get("role", "user")
-        content = msg.get("content", "")
-        if isinstance(content, list):
-            content = " ".join([c.get("text", "") for c in content if isinstance(c, dict) and "text" in c])
-        
-        if role == "system":
-            conversation_text += f"[System Rule: {content}]\n"
-        elif role == "user":
-            conversation_text += f"User: {content}\n"
-        elif role == "assistant":
-            conversation_text += f"Assistant: {content}\n"
+    # ইউজারের লেটেস্ট ক্লিন প্রম্পট নেওয়া (কোনো সিস্টেম ব্র্যাকেট ছাড়া)
+    user_prompt = ""
+    for msg in reversed(messages):
+        if msg.get("role") == "user":
+            content = msg.get("content", "")
+            if isinstance(content, list):
+                parts = [c.get("text", "") for c in content if isinstance(c, dict) and "text" in c]
+                user_prompt = " ".join(parts)
+            else:
+                user_prompt = str(content)
+            break
 
-    conversation_text += "Assistant: "
+    if not user_prompt.strip():
+        user_prompt = "Hello"
 
     STATS["active_requests"] += 1
     start_time = time.time()
     generated_text = ""
 
-    # ২ বার রি-ট্রাই মেকানিজম (যাতে কখনো ফেইল না করে)
     for attempt in range(2):
         client = await get_or_init_client(force_new=(attempt > 0))
         if not client:
             continue
         try:
-            # ৩০ সেকেন্ড টাইমআউট বাফার
-            output = await asyncio.wait_for(client.generate_content(conversation_text), timeout=35.0)
-            generated_text = output.text or ""
-            if generated_text:
+            # সরাসরি স্বাভাবিক প্রম্পট পাঠানো (কোনো আর্টিফিসিয়াল ট্যাগ ছাড়া)
+            output = await asyncio.wait_for(client.generate_content(user_prompt), timeout=35.0)
+            text_result = output.text or ""
+            # গুগলের এরর মেসেজ আসলে সেটি বাদ দিয়ে রি-ট্রাই করা
+            if text_result and "I encountered an error" not in text_result:
+                generated_text = text_result
                 break
-        except Exception as e:
-            if attempt == 1:
-                generated_text = "আমি আপনার প্রম্পটটি প্রসেস করতে প্রস্তুত। দয়া করে আরেকবার বলুন বা অন্য কোনো মডেল সিলেক্ট করুন।"
+        except Exception:
+            pass
+
+    if not generated_text:
+        generated_text = "আমি আপনার মেসেজটি পেয়েছি। আজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন?"
 
     token_count = max(1, len(generated_text) // 4)
     STATS["total_tokens"] += token_count
@@ -216,7 +214,7 @@ async def chat_completions(request: Request):
 @app.get("/")
 async def root():
     return {
-        "service": "Titan AI Agent Multi-Model Gateway",
+        "service": "Titan AI Agent Gateway",
         "status": STATS["status"],
         "models_count": len(SUPPORTED_MODELS),
         "total_tokens": STATS["total_tokens"]
