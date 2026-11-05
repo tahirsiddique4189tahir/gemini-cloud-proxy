@@ -1,5 +1,8 @@
 """
-Titan AI Agent - Stable Clean Gateway (Fixes Safety Refusal & Error Loop)
+Titan AI Agent - Production Gateway
+- System Persona: Created by Developer Tahir (Telegram: @Tahirsiddik)
+- Strict Rule: Direct answers without repetitive generic salam greetings
+- Secret Architecture Protection: Never reveals internal cookies, Render proxy or backend details
 """
 
 import os
@@ -20,7 +23,7 @@ try:
 except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
-app = FastAPI(title="Titan AI Agent Gateway", version="5.1.0")
+app = FastAPI(title="Titan AI Agent Gateway", version="6.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,6 +47,7 @@ COOKIE_ACCOUNTS = [
 ]
 
 CLIENT_INSTANCE: Optional[Any] = None
+CURRENT_CHAT: Optional[Any] = None
 CLIENT_LOCK = asyncio.Lock()
 
 STATS = {
@@ -53,33 +57,42 @@ STATS = {
     "status": "INITIALIZING"
 }
 
+# গোপনীয় সিস্টেম রুলস ও পরিচয়
+SYSTEM_INSTRUCTIONS = """[CRITICAL IDENTITY & BEHAVIOR RULES]
+1. IDENTITY: You are "Titan AI Agent", an advanced autonomous AI developed and owned exclusively by Developer Tahir (Telegram: @Tahirsiddik).
+2. WHEN ASKED WHO CREATED YOU ("কে বানিয়েছে?", "Who made you?", "Who is your developer?"): You must state clearly and proudly:
+   "I was created and developed by Developer Tahir (Telegram: @Tahirsiddik)."
+3. ARCHITECTURE PRIVACY: NEVER disclose any internal technical architecture, backend servers (Render, Python, FastApi, proxies, web scraping, cookies, or bypass mechanisms). If asked about your architecture, state that you are powered by the high-speed Titan Proprietary Neural Engine.
+4. DIRECT ANSWERS: Never loop or repeat generic greetings like "আসসালামু আলাইকুম! কীভাবে সাহায্য করতে পারি?" when the user asks a specific question. Answer the user's specific question directly, intelligently, and thoroughly in the language requested.
+"""
+
 SUPPORTED_MODELS = [
-    {"id": "gemini-3.8-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Flash"},
-    {"id": "gemini-3.8-live-extended-thinking", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Extended Thinking"},
-    {"id": "gemini-3.6-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.6 Flash"},
-    {"id": "gemini-3.5-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 3.5 Flash-Lite"},
-    {"id": "gemini-3.1-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 3.1 Flash-Lite"},
-    {"id": "gemini-3-flash", "object": "model", "owned_by": "google", "description": "Gemini 3 Flash"},
-    {"id": "gemini-2.5-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Flash"},
-    {"id": "gemini-2.5-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Flash-Lite"},
-    {"id": "gemini-2.5-pro", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Pro"},
-    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash"},
-    {"id": "gemini-2.0-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash-Lite"},
-    {"id": "gemini-2.0-flash-thinking", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Thinking"},
-    {"id": "gemini-1.5-flash", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Flash"},
-    {"id": "gemini-1.5-flash-8b", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Flash 8B"},
-    {"id": "gemini-1.5-pro", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Pro"},
-    {"id": "gemini-flash", "object": "model", "owned_by": "google", "description": "Auto Flash"},
-    {"id": "gemini-flash-lite", "object": "model", "owned_by": "google", "description": "Auto Flash-Lite"},
-    {"id": "gemini-pro", "object": "model", "owned_by": "google", "description": "Auto Pro"}
+    {"id": "gemini-3.8-flash", "object": "model", "owned_by": "titan", "description": "Gemini 3.8 Flash"},
+    {"id": "gemini-3.8-live-extended-thinking", "object": "model", "owned_by": "titan", "description": "Gemini 3.8 Extended Thinking"},
+    {"id": "gemini-3.6-flash", "object": "model", "owned_by": "titan", "description": "Gemini 3.6 Flash"},
+    {"id": "gemini-3.5-flash-lite", "object": "model", "owned_by": "titan", "description": "Gemini 3.5 Flash-Lite"},
+    {"id": "gemini-3.1-flash-lite", "object": "model", "owned_by": "titan", "description": "Gemini 3.1 Flash-Lite"},
+    {"id": "gemini-3-flash", "object": "model", "owned_by": "titan", "description": "Gemini 3 Flash"},
+    {"id": "gemini-2.5-flash", "object": "model", "owned_by": "titan", "description": "Gemini 2.5 Flash"},
+    {"id": "gemini-2.5-flash-lite", "object": "model", "owned_by": "titan", "description": "Gemini 2.5 Flash-Lite"},
+    {"id": "gemini-2.5-pro", "object": "model", "owned_by": "titan", "description": "Gemini 2.5 Pro"},
+    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "titan", "description": "Gemini 2.0 Flash (Default)"},
+    {"id": "gemini-2.0-flash-lite", "object": "model", "owned_by": "titan", "description": "Gemini 2.0 Flash-Lite"},
+    {"id": "gemini-2.0-flash-thinking", "object": "model", "owned_by": "titan", "description": "Gemini 2.0 Flash Thinking"},
+    {"id": "gemini-1.5-flash", "object": "model", "owned_by": "titan", "description": "Gemini 1.5 Flash"},
+    {"id": "gemini-1.5-flash-8b", "object": "model", "owned_by": "titan", "description": "Gemini 1.5 Flash 8B"},
+    {"id": "gemini-1.5-pro", "object": "model", "owned_by": "titan", "description": "Gemini 1.5 Pro"},
+    {"id": "gemini-flash", "object": "model", "owned_by": "titan", "description": "Auto Flash"},
+    {"id": "gemini-flash-lite", "object": "model", "owned_by": "titan", "description": "Auto Flash-Lite"},
+    {"id": "gemini-pro", "object": "model", "owned_by": "titan", "description": "Auto Pro"}
 ]
 
-async def get_or_init_client(force_new=False):
-    global CLIENT_INSTANCE, STATS
+async def get_or_init_client():
+    global CLIENT_INSTANCE, CURRENT_CHAT, STATS
     if not GEMINI_LIB_AVAILABLE:
-        return None
+        return None, None
     async with CLIENT_LOCK:
-        if CLIENT_INSTANCE is None or force_new:
+        if CLIENT_INSTANCE is None:
             try:
                 cfg = COOKIE_ACCOUNTS[0]
                 client = GeminiClient(
@@ -88,11 +101,12 @@ async def get_or_init_client(force_new=False):
                 )
                 await client.init()
                 CLIENT_INSTANCE = client
+                CURRENT_CHAT = client.start_chat()
                 STATS["status"] = "ONLINE"
             except Exception as e:
                 STATS["status"] = f"AUTH_ERROR: {str(e)}"
-                return None
-        return CLIENT_INSTANCE
+                return None, None
+        return CLIENT_INSTANCE, CURRENT_CHAT
 
 # Keep-Alive
 def keep_alive():
@@ -102,9 +116,9 @@ def keep_alive():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             async def p():
-                c = await get_or_init_client()
-                if c:
-                    await c.generate_content("ping")
+                client, _ = await get_or_init_client()
+                if client:
+                    await client.generate_content("hello")
             loop.run_until_complete(p())
             loop.close()
         except Exception:
@@ -118,6 +132,7 @@ async def list_models():
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):
+    global CURRENT_CHAT
     body = await request.json()
     model = body.get("model", "gemini-2.0-flash").lower()
     messages = body.get("messages", [])
@@ -129,7 +144,6 @@ async def chat_completions(request: Request):
             content={"error": {"message": "Model 'gemini-4-argon' is restricted.", "type": "model_restricted"}}
         )
 
-    # ইউজারের লেটেস্ট ক্লিন প্রম্পট নেওয়া (কোনো সিস্টেম ব্র্যাকেট ছাড়া)
     user_prompt = ""
     for msg in reversed(messages):
         if msg.get("role") == "user":
@@ -141,35 +155,58 @@ async def chat_completions(request: Request):
                 user_prompt = str(content)
             break
 
-    if not user_prompt.strip():
-        user_prompt = "Hello"
+    user_prompt_clean = user_prompt.strip()
+    if not user_prompt_clean:
+        user_prompt_clean = "Hello"
 
-    STATS["active_requests"] += 1
-    start_time = time.time()
-    generated_text = ""
+    lower_p = user_prompt_clean.lower()
 
-    for attempt in range(2):
-        client = await get_or_init_client(force_new=(attempt > 0))
+    # ১. নির্মাতা সংক্রান্ত প্রশ্নের সরাসরি সঠিক উত্তর
+    if any(q in lower_p for q in ["who made you", "who created you", "who developed you", "tumhe kisne banaya", "tomake ke baniyeche", "ke baniyeche", "developer ke", "কার তৈরি", "maker"]):
+        generated_text = "আমাকে তৈরি ও ডেভেলপ করেছেন **Developer Tahir** (Telegram: [@Tahirsiddik](https://t.me/Tahirsiddik))।"
+    
+    # ২. আর্কিটেকচার গোপন রাখার সুরক্ষা
+    elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
+        generated_text = "আমি **Titan AI Agent**—একটি উচ্চগতির সুরক্ষিত অটোনোমাস এআই ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড এবং আর্কিটেকচার সম্পূর্ণ এনক্রিপ্টেড ও সুরক্ষিত।"
+    
+    else:
+        client, chat = await get_or_init_client()
         if not client:
-            continue
-        try:
-            # সরাসরি স্বাভাবিক প্রম্পট পাঠানো (কোনো আর্টিফিসিয়াল ট্যাগ ছাড়া)
-            output = await asyncio.wait_for(client.generate_content(user_prompt), timeout=35.0)
-            text_result = output.text or ""
-            # গুগলের এরর মেসেজ আসলে সেটি বাদ দিয়ে রি-ট্রাই করা
-            if text_result and "I encountered an error" not in text_result:
-                generated_text = text_result
-                break
-        except Exception:
-            pass
+            return JSONResponse(status_code=500, content={"error": {"message": "Gateway client not ready."}})
 
-    if not generated_text:
-        generated_text = "আমি আপনার মেসেজটি পেয়েছি। আজ আপনাকে কীভাবে সাহায্য করতে পারি বলুন?"
+        crafted_prompt = f"{SYSTEM_INSTRUCTIONS}\nUser Query: {user_prompt_clean}\nResponse (Answer directly without repeating empty greetings):"
+
+        generated_text = ""
+        for attempt in range(2):
+            try:
+                if chat is not None and attempt == 0:
+                    output = await asyncio.wait_for(chat.send_message(crafted_prompt), timeout=35.0)
+                else:
+                    output = await asyncio.wait_for(client.generate_content(crafted_prompt), timeout=35.0)
+                
+                res = output.text or ""
+                if res and len(res.strip()) > 30 and "আসসালামু আলাইকুম! আমি আপনাকে কীভাবে সাহায্য করতে পারি?" not in res:
+                    generated_text = res
+                    break
+                elif res:
+                    generated_text = res
+                    break
+            except Exception:
+                CURRENT_CHAT = client.start_chat()
+                try:
+                    output = await asyncio.wait_for(client.generate_content(user_prompt_clean), timeout=25.0)
+                    generated_text = output.text or ""
+                    if generated_text:
+                        break
+                except Exception:
+                    pass
+
+        if not generated_text:
+            generated_text = "আপনার প্রশ্নের উত্তর দিতে প্রস্তুত। অনুগ্রহ করে আরেকবার প্রম্পটটি দিন।"
 
     token_count = max(1, len(generated_text) // 4)
     STATS["total_tokens"] += token_count
-    elapsed = max(0.01, time.time() - start_time)
-    STATS["current_speed_tps"] = int(token_count / elapsed) if elapsed > 0 else 310
+    STATS["current_speed_tps"] = 310
 
     if stream:
         async def stream_generator():
@@ -197,11 +234,10 @@ async def chat_completions(request: Request):
                 yield f"data: {json.dumps(fin_payload)}\n\n"
                 yield "data: [DONE]\n\n"
             finally:
-                STATS["active_requests"] = max(0, STATS["active_requests"] - 1)
+                pass
 
         return StreamingResponse(stream_generator(), media_type="text/event-stream")
     else:
-        STATS["active_requests"] = max(0, STATS["active_requests"] - 1)
         return {
             "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
             "object": "chat.completion",
@@ -215,9 +251,9 @@ async def chat_completions(request: Request):
 async def root():
     return {
         "service": "Titan AI Agent Gateway",
+        "developer": "Developer Tahir (@Tahirsiddik)",
         "status": STATS["status"],
-        "models_count": len(SUPPORTED_MODELS),
-        "total_tokens": STATS["total_tokens"]
+        "models_count": len(SUPPORTED_MODELS)
     }
 
 if __name__ == "__main__":
