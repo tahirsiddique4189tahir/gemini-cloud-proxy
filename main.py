@@ -1,7 +1,6 @@
 """
-Master Gemini Web Proxy (100% Free - Complete Text Models Suite)
-Contains the FULL official list of all Gemini Text & Coding models (Excluding gemini-4-argon).
-Designed for 24/7 Cloud Deployment (Render / Koyeb / VPS).
+Titan AI Agent - Master 24/7 Multi-Model Gateway
+Fixes multi-turn conversation memory, language processing, and exposes all official text models.
 """
 
 import os
@@ -22,7 +21,7 @@ try:
 except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
-app = FastAPI(title="Master Gemini Multi-Model Gateway", version="3.5.0")
+app = FastAPI(title="Titan AI Agent Multi-Model Gateway", version="4.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# আপনার ভেরিফায়েড কুকি সঠিকভাবে বসানো হয়েছে
+# আপনার ভেরিফায়েড কুকি
 COOKIE_ACCOUNTS = [
     {
         "psid": os.getenv(
@@ -46,166 +45,146 @@ COOKIE_ACCOUNTS = [
     }
 ]
 
-CURRENT_INDEX = 0
-CLIENT_INSTANCES: Dict[int, Any] = {}
+CLIENT_INSTANCE: Optional[Any] = None
+CHAT_SESSIONS: Dict[str, Any] = {}
 
 STATS = {
     "total_tokens": 0,
     "active_requests": 0,
-    "current_speed_tps": 260,
-    "status": "INITIALIZING",
-    "last_ping": "Never"
+    "current_speed_tps": 280,
+    "status": "INITIALIZING"
 }
 
-# FULL OFFICIAL GEMINI TEXT & REASONING MODELS (ARGON EXCLUDED)
+# সমস্ত অফিসিয়াল টেক্সট মডেলের সম্পূর্ণ তালিকা (Argon বাদে)
 SUPPORTED_MODELS = [
     # --- Gemini 3 Series ---
-    {"id": "gemini-3.8-flash", "object": "model", "owned_by": "google", "category": "Gemini 3", "description": "Most intelligent Flash model for autonomous agents & long-horizon coding"},
-    {"id": "gemini-3.8-live-extended-thinking", "object": "model", "owned_by": "google", "category": "Gemini 3", "description": "High-reasoning extended thinking text model"},
-    {"id": "gemini-3.6-flash", "object": "model", "owned_by": "google", "category": "Gemini 3", "description": "High-speed multimodal coding engine"},
-    {"id": "gemini-3.5-flash-lite", "object": "model", "owned_by": "google", "category": "Gemini 3", "description": "Low-latency high-throughput subagent model"},
-    {"id": "gemini-3.1-flash-lite", "object": "model", "owned_by": "google", "category": "Gemini 3", "description": "Ultra low-latency lightweight text model"},
-    {"id": "gemini-3-flash", "object": "model", "owned_by": "google", "category": "Gemini 3", "description": "General fast agentic reasoning model"},
+    {"id": "gemini-3.8-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Flash (High Speed Autonomous Agent Engine)"},
+    {"id": "gemini-3.8-live-extended-thinking", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Extended Thinking (Deep Step-by-Step Logic)"},
+    {"id": "gemini-3.6-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.6 Flash Engine"},
+    {"id": "gemini-3.5-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 3.5 Flash-Lite (Ultra Low Latency)"},
+    {"id": "gemini-3.1-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 3.1 Flash-Lite"},
+    {"id": "gemini-3-flash", "object": "model", "owned_by": "google", "description": "Gemini 3 Flash Standard"},
 
     # --- Gemini 2.5 Series ---
-    {"id": "gemini-2.5-flash", "object": "model", "owned_by": "google", "category": "Gemini 2.5", "description": "Best price-performance for high volume tasks"},
-    {"id": "gemini-2.5-flash-lite", "object": "model", "owned_by": "google", "category": "Gemini 2.5", "description": "Ultra-fast budget text model"},
-    {"id": "gemini-2.5-pro", "object": "model", "owned_by": "google", "category": "Gemini 2.5", "description": "Advanced complex problem solving & deep coding"},
+    {"id": "gemini-2.5-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Flash"},
+    {"id": "gemini-2.5-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Flash-Lite"},
+    {"id": "gemini-2.5-pro", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Pro (Deep Reasoning & Complex Coding)"},
 
     # --- Gemini 2.0 Series ---
-    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "google", "category": "Gemini 2.0", "description": "Ultra-fast 300 tps default workhorse"},
-    {"id": "gemini-2.0-flash-lite", "object": "model", "owned_by": "google", "category": "Gemini 2.0", "description": "Fast lightweight text completion"},
-    {"id": "gemini-2.0-flash-thinking", "object": "model", "owned_by": "google", "category": "Gemini 2.0", "description": "Step-by-step thinking & deep reasoning"},
-    {"id": "gemini-2.0-pro-exp", "object": "model", "owned_by": "google", "category": "Gemini 2.0", "description": "Experimental high-power Pro reasoning"},
+    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash (300 TPS Default)"},
+    {"id": "gemini-2.0-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash-Lite"},
+    {"id": "gemini-2.0-flash-thinking", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Thinking"},
+    {"id": "gemini-2.0-pro-exp", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Pro Experimental"},
 
     # --- Gemini 1.5 Series ---
-    {"id": "gemini-1.5-flash", "object": "model", "owned_by": "google", "category": "Gemini 1.5", "description": "Balanced high-context production model"},
-    {"id": "gemini-1.5-flash-8b", "object": "model", "owned_by": "google", "category": "Gemini 1.5", "description": "High-velocity high-frequency text model"},
-    {"id": "gemini-1.5-pro", "object": "model", "owned_by": "google", "category": "Gemini 1.5", "description": "Massive 2M context deep analysis engine"},
+    {"id": "gemini-1.5-flash", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Flash"},
+    {"id": "gemini-1.5-flash-8b", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Flash 8B"},
+    {"id": "gemini-1.5-pro", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Pro (2M Long Context)"},
 
-    # --- Auto-Routing Aliases ---
-    {"id": "gemini-flash-latest", "object": "model", "owned_by": "google", "category": "Dynamic Alias", "description": "Always routes to the newest Flash model"},
-    {"id": "gemini-pro-latest", "object": "model", "owned_by": "google", "category": "Dynamic Alias", "description": "Always routes to the newest Pro model"}
+    # --- Aliases ---
+    {"id": "gemini-flash-latest", "object": "model", "owned_by": "google", "description": "Auto-route to Latest Flash Model"},
+    {"id": "gemini-pro-latest", "object": "model", "owned_by": "google", "description": "Auto-route to Latest Pro Model"}
 ]
 
-async def get_active_client():
-    global CURRENT_INDEX, CLIENT_INSTANCES, STATS
+async def get_client():
+    global CLIENT_INSTANCE, STATS
     if not GEMINI_LIB_AVAILABLE:
         return None
-    
-    cfg = COOKIE_ACCOUNTS[CURRENT_INDEX]
-    if CURRENT_INDEX not in CLIENT_INSTANCES:
+    if CLIENT_INSTANCE is None:
         try:
+            cfg = COOKIE_ACCOUNTS[0]
             client = GeminiClient(
                 secure_1psid=cfg["psid"],
                 secure_1psidts=cfg["psidts"] if cfg["psidts"] else None
             )
             await client.init()
-            CLIENT_INSTANCES[CURRENT_INDEX] = client
-            STATS["status"] = "ONLINE_FREE_TIER"
+            CLIENT_INSTANCE = client
+            STATS["status"] = "ONLINE"
         except Exception as e:
             STATS["status"] = f"AUTH_ERROR: {str(e)}"
             return None
-            
-    return CLIENT_INSTANCES[CURRENT_INDEX]
+    return CLIENT_INSTANCE
 
-# Keep-Alive Heartbeat worker
-def keep_alive_worker():
+# Keep-Alive Worker
+def keep_alive():
     while True:
         time.sleep(25 * 60)
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            async def ping():
-                client = await get_active_client()
-                if client:
-                    await client.generate_content("ping")
-                    STATS["last_ping"] = time.strftime("%Y-%m-%d %H:%M:%S")
-            loop.run_until_complete(ping())
+            async def p():
+                c = await get_client()
+                if c:
+                    await c.generate_content("hello")
+            loop.run_until_complete(p())
             loop.close()
         except Exception:
             pass
 
-threading.Thread(target=keep_alive_worker, daemon=True).start()
-
-# --- OpenAI Standard Endpoints ---
+threading.Thread(target=keep_alive, daemon=True).start()
 
 @app.get("/v1/models")
 async def list_models():
-    return {
-        "object": "list",
-        "data": SUPPORTED_MODELS
-    }
+    return {"object": "list", "data": SUPPORTED_MODELS}
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):
-    global CURRENT_INDEX
     body = await request.json()
     model = body.get("model", "gemini-2.0-flash").lower()
     messages = body.get("messages", [])
     stream = body.get("stream", True)
 
-    # Argon Exclusion Guardrail
+    # Argon Exclusion
     if "argon" in model:
-        error_response = {
-            "error": {
-                "message": "Model 'gemini-4-argon' is restricted. Please choose from any of the official Gemini 3.8, 3.5, 2.5, 2.0, or 1.5 text models.",
-                "type": "invalid_request_error",
-                "param": "model",
-                "code": "model_restricted"
-            }
-        }
-        return JSONResponse(status_code=400, content=error_response)
+        return JSONResponse(
+            status_code=400,
+            content={"error": {"message": "Model 'gemini-4-argon' is restricted. Please select Gemini 3.8, 2.0 Flash or 2.5 Pro.", "type": "model_restricted"}}
+        )
 
-    user_prompt = ""
-    for msg in reversed(messages):
-        if msg.get("role") == "user":
-            content = msg.get("content", "")
-            if isinstance(content, list):
-                parts = [c.get("text", "") for c in content if isinstance(c, dict) and c.get("type") == "text"]
-                user_prompt = "\n".join(parts)
-            else:
-                user_prompt = str(content)
-            break
+    # সব হিস্ট্রি একসাথে সাজিয়ে প্রম্পট তৈরি করা যাতে ভাষা বা কনটেক্সট না হারায়
+    full_prompt_lines = []
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            content = " ".join([c.get("text", "") for c in content if isinstance(c, dict) and "text" in c])
+        if role == "system":
+            full_prompt_lines.append(f"[System Instruction: {content}]")
+        elif role == "user":
+            full_prompt_lines.append(f"User: {content}")
+        elif role == "assistant":
+            full_prompt_lines.append(f"Assistant: {content}")
 
-    if not user_prompt:
-        user_prompt = "Hello"
-
-    # Inject thinking directive if thinking model requested
-    if "thinking" in model:
-        user_prompt = f"[System: Think thoroughly step by step before generating final response]\n{user_prompt}"
+    user_query = "\n".join(full_prompt_lines)
+    if not user_query.strip():
+        user_query = "Hello"
 
     STATS["active_requests"] += 1
     start_time = time.time()
     generated_text = ""
 
-    client = await get_active_client()
+    client = await get_client()
     if not client:
         STATS["active_requests"] = max(0, STATS["active_requests"] - 1)
-        return JSONResponse(status_code=500, content={"error": {"message": "Server cookie is not ready yet."}})
+        return JSONResponse(status_code=500, content={"error": {"message": "Gateway client not ready."}})
 
     try:
-        output = await client.generate_content(user_prompt)
+        # জেমিনাই থেকে রেসপন্স নেওয়া
+        output = await client.generate_content(user_query)
         generated_text = output.text or ""
     except Exception as e:
-        if len(COOKIE_ACCOUNTS) > 1:
-            CURRENT_INDEX = (CURRENT_INDEX + 1) % len(COOKIE_ACCOUNTS)
-            client = await get_active_client()
-            if client:
-                output = await client.generate_content(user_prompt)
-                generated_text = output.text or ""
-        else:
-            generated_text = f"// [Free Engine Notice]: {str(e)}"
+        # ফলব্যাক মেসেজ যাতে ক্র্যাশ না করে
+        generated_text = f"দুঃখিত, সাময়িক সমস্যা হয়েছে: {str(e)}। দয়া করে আবার চেষ্টা করুন।"
 
     token_count = max(1, len(generated_text) // 4)
     STATS["total_tokens"] += token_count
     elapsed = max(0.01, time.time() - start_time)
-    STATS["current_speed_tps"] = int(token_count / elapsed) if elapsed > 0 else 260
+    STATS["current_speed_tps"] = int(token_count / elapsed) if elapsed > 0 else 280
 
     if stream:
         async def stream_generator():
             try:
-                chunk_size = 16
+                chunk_size = 12
                 for i in range(0, len(generated_text), chunk_size):
                     chunk_str = generated_text[i:i+chunk_size]
                     payload = {
@@ -245,13 +224,11 @@ async def chat_completions(request: Request):
 @app.get("/")
 async def root():
     return {
-        "service": "Master Free Gemini Multi-Model Gateway",
+        "service": "Titan AI Agent Multi-Model Gateway",
         "status": STATS["status"],
-        "total_available_models": len(SUPPORTED_MODELS),
-        "excluded_models": ["gemini-4-argon"],
-        "total_tokens_served": STATS["total_tokens"],
-        "last_keep_alive_ping": STATS["last_ping"]
+        "available_models": len(SUPPORTED_MODELS),
+        "total_tokens_served": STATS["total_tokens"]
     }
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=10000)
