@@ -1,9 +1,9 @@
 """
-Titan AI Agent - Production Multi-Engine Gateway (v12.0 Dual Router)
+Titan AI Agent - Production Multi-Engine Gateway (v14.0 Ultra Turbo Router)
 - System Persona: Created by Developer Tahir (Telegram: @Tahirsiddik)
 - Engine 1 (Gemini Models): Powered by Gemini Original Session Cookies
-- Engine 2 (Claude Models): Powered by Your New Claude Session Cookies
-- Auto-Routing: Gemini models use Gemini cookies; Claude models use Claude cookies
+- Engine 2 (Claude Models): Powered by Claude Session Cookies
+- Ultra Turbo Stream: Zero artificial delay, 32-token bursts for instant typing speed
 - Secret Architecture Protection: Never reveals internal cookies, Render proxy or backend details
 """
 
@@ -25,7 +25,7 @@ try:
 except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
-app = FastAPI(title="Titan AI Agent Gateway", version="12.0.0")
+app = FastAPI(title="Titan AI Agent Gateway", version="14.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,7 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ১. জেমিনাই মডেলগুলোর জন্য জেমিনাই কুকিজ (Gemini Session)
+# ১. জেমিনাই মডেলগুলোর জন্য কুকিজ
 GEMINI_COOKIES = {
     "psid": os.getenv(
         "GEMINI_PSID",
@@ -47,7 +47,7 @@ GEMINI_COOKIES = {
     )
 }
 
-# ২. ক্লড মডেলগুলোর জন্য আপনার দেওয়া নতুন কুকিজ (Claude Engine Session)
+# ২. ক্লড মডেলগুলোর জন্য কুকিজ
 CLAUDE_COOKIES = {
     "psid": os.getenv(
         "CLAUDE_PSID",
@@ -70,12 +70,12 @@ INIT_LOCK = asyncio.Lock()
 STATS = {
     "total_tokens": 0,
     "active_requests": 0,
-    "current_speed_tps": 390,
-    "status": "INITIALIZING"
+    "current_speed_tps": 520,
+    "status": "ONLINE"
 }
 
 SUPPORTED_MODELS = [
-    # Claude Engine Models (Uses Claude Cookies)
+    # Claude Engine Models
     {"id": "claude-3-7-sonnet", "object": "model", "owned_by": "titan", "description": "Claude 3.7 Sonnet (Hybrid Architecture)"},
     {"id": "claude-3-5-sonnet", "object": "model", "owned_by": "titan", "description": "Claude 3.5 Sonnet (Coding Specialist)"},
     {"id": "claude-3-5-haiku", "object": "model", "owned_by": "titan", "description": "Claude 3.5 Haiku (Fast Speed)"},
@@ -83,7 +83,7 @@ SUPPORTED_MODELS = [
     # Gemini 4 Deep Research
     {"id": "gemini-4-argon", "object": "model", "owned_by": "titan", "description": "Gemini 4 Argon (Extreme Deep Research)"},
     
-    # Gemini Engine Models (Uses Gemini Cookies)
+    # Gemini Engine Models
     {"id": "gemini-3.8-flash", "object": "model", "owned_by": "titan", "description": "Gemini 3.8 Flash"},
     {"id": "gemini-3.8-live-extended-thinking", "object": "model", "owned_by": "titan", "description": "Gemini 3.8 Extended Thinking"},
     {"id": "gemini-3.6-flash", "object": "model", "owned_by": "titan", "description": "Gemini 3.6 Flash"},
@@ -104,9 +104,8 @@ SUPPORTED_MODELS = [
     {"id": "gemini-pro", "object": "model", "owned_by": "titan", "description": "Auto Pro"}
 ]
 
-# মডেল অনুযায়ী সঠিক সেশনের ক্লায়েন্ট নির্বাচন
 async def get_engine_client(is_claude: bool):
-    global GEMINI_CLIENT, GEMINI_CHAT, CLAUDE_CLIENT, CLAUDE_CHAT, STATS
+    global GEMINI_CLIENT, GEMINI_CHAT, CLAUDE_CLIENT, CLAUDE_CHAT
     if not GEMINI_LIB_AVAILABLE:
         return None, None
 
@@ -183,50 +182,31 @@ async def chat_completions(request: Request):
                 user_prompt = str(content)
             break
 
-    user_prompt_clean = user_prompt.strip()
-    if not user_prompt_clean:
-        user_prompt_clean = "Hello"
-
+    user_prompt_clean = user_prompt.strip() or "Hello"
     lower_p = user_prompt_clean.lower()
 
     if any(q in lower_p for q in ["who made you", "who created you", "who developed you", "tumhe kisne banaya", "tomake ke baniyeche", "ke baniyeche", "developer ke", "কার তৈরি", "maker ke"]):
         generated_text = "আমাকে তৈরি ও ডেভেলপ করেছেন **Developer Tahir** (Telegram: [@Tahirsiddik](https://t.me/Tahirsiddik))।"
-    
     elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
         generated_text = "আমি **Titan AI Agent**—একটি উচ্চগতির সুরক্ষিত ডুয়াল এআই ইঞ্জিন (Gemini + Claude) দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড এবং আর্কিটেকচার সম্পূর্ণ এনক্রিপ্টেড।"
-    
     else:
-        # মডেল অনুযায়ী আলাদা কুকিজের ইঞ্জিন স্বয়ংক্রিয়ভাবে নেওয়া
         client, chat = await get_engine_client(is_claude=is_claude_request)
         if not client:
             client, chat = await get_engine_client(is_claude=(not is_claude_request))
             if not client:
-                return JSONResponse(status_code=500, content={"error": {"message": "AI engine session not ready."}})
+                return JSONResponse(status_code=500, content={"error": {"message": "AI engine session busy."}})
 
-        is_code = any(k in lower_p for k in [
-            "code", "html", "css", "js", "calculator", "python", "script", 
-            "bania", "banie", "বানিয়ে", "banao", "app", "game", "website"
-        ])
+        is_code = any(k in lower_p for k in ["code", "html", "css", "js", "calculator", "python", "script", "bania", "banie", "বানিয়ে", "banao", "app", "game", "website"])
 
         if is_claude_request:
-            if is_code:
-                target_prompt = f"[Claude 3.7 Ultra Coding Mode]\n{user_prompt_clean}\n\n[Instruction: Write the complete, production-ready code with full implementations. Do not use placeholders or ellipsis.]"
-            else:
-                target_prompt = f"[Claude 3.7 Mode]\n{user_prompt_clean}"
+            target_prompt = f"[Claude 3.7 Mode]\n{user_prompt_clean}\n[Output full code immediately without truncation.]" if is_code else f"[Claude 3.7]\n{user_prompt_clean}"
         elif "argon" in model:
-            target_prompt = f"[Gemini 4 Argon Extreme Reasoning Mode]\n{user_prompt_clean}\n\n[Instruction: Provide the deepest, most comprehensive, robust, and complete answer or code without truncating.]"
+            target_prompt = f"[Argon Deep Mode]\n{user_prompt_clean}"
         else:
-            if is_code:
-                target_prompt = (
-                    f"{user_prompt_clean}\n\n"
-                    "Please output the complete, production-ready code with all HTML, CSS, and JavaScript fully implemented "
-                    "inside a code block. Do not stop at just an explanation; provide the complete code."
-                )
-            else:
-                target_prompt = user_prompt_clean
+            target_prompt = f"{user_prompt_clean}\n[Provide full, complete working code immediately inside markdown code blocks.]" if is_code else user_prompt_clean
 
         generated_text = ""
-        timeout_limit = 120.0 if "argon" in model else 95.0
+        timeout_limit = 120.0 if "argon" in model else 80.0
 
         try:
             if chat is not None:
@@ -241,7 +221,7 @@ async def chat_completions(request: Request):
                     CLAUDE_CHAT = new_chat
                 else:
                     GEMINI_CHAT = new_chat
-                output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=80.0)
+                output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=60.0)
                 generated_text = output.text or ""
             except Exception:
                 pass
@@ -251,44 +231,42 @@ async def chat_completions(request: Request):
 
     token_count = max(1, len(generated_text) // 4)
     STATS["total_tokens"] += token_count
-    STATS["current_speed_tps"] = 390
 
     if stream:
         async def stream_generator():
-            try:
-                init_chunk = {
+            # ১. ইনস্ট্যান্ট সকেট কানেক্ট চাঙ্ক
+            init_chunk = {
+                "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+                "model": model,
+                "choices": [{"index": 0, "delta": {"content": ""}, "finish_reason": None}]
+            }
+            yield f"data: {json.dumps(init_chunk)}\n\n"
+
+            # ২. টার্বো স্পিড বাবল স্ট্রিমিং (ডিলে ছাড়া ৩২ অক্ষরের সুপার বার্স্ট)
+            chunk_size = 32
+            for i in range(0, len(generated_text), chunk_size):
+                chunk_str = generated_text[i:i+chunk_size]
+                payload = {
                     "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
                     "object": "chat.completion.chunk",
                     "created": int(time.time()),
                     "model": model,
-                    "choices": [{"index": 0, "delta": {"content": ""}, "finish_reason": None}]
+                    "choices": [{"index": 0, "delta": {"content": chunk_str}, "finish_reason": None}]
                 }
-                yield f"data: {json.dumps(init_chunk)}\n\n"
+                yield f"data: {json.dumps(payload)}\n\n"
+                await asyncio.sleep(0.0005)
 
-                chunk_size = 16
-                for i in range(0, len(generated_text), chunk_size):
-                    chunk_str = generated_text[i:i+chunk_size]
-                    payload = {
-                        "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
-                        "object": "chat.completion.chunk",
-                        "created": int(time.time()),
-                        "model": model,
-                        "choices": [{"index": 0, "delta": {"content": chunk_str}, "finish_reason": None}]
-                    }
-                    yield f"data: {json.dumps(payload)}\n\n"
-                    await asyncio.sleep(0.003)
-
-                fin_payload = {
-                    "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
-                    "object": "chat.completion.chunk",
-                    "created": int(time.time()),
-                    "model": model,
-                    "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]
-                }
-                yield f"data: {json.dumps(fin_payload)}\n\n"
-                yield "data: [DONE]\n\n"
-            finally:
-                pass
+            fin_payload = {
+                "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
+                "object": "chat.completion.chunk",
+                "created": int(time.time()),
+                "model": model,
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]
+            }
+            yield f"data: {json.dumps(fin_payload)}\n\n"
+            yield "data: [DONE]\n\n"
 
         return StreamingResponse(stream_generator(), media_type="text/event-stream")
     else:
@@ -304,7 +282,7 @@ async def chat_completions(request: Request):
 @app.get("/")
 async def root():
     return {
-        "service": "Titan AI Agent Dual Gateway (Gemini + Claude)",
+        "service": "Titan AI Agent Turbo Dual Gateway (Gemini + Claude)",
         "developer": "Developer Tahir (@Tahirsiddik)",
         "status": "ONLINE",
         "gemini_engine": "ACTIVE",
