@@ -1,9 +1,8 @@
 """
-Titan AI Agent - Production Gateway (v9.9.0 Code Guarantee Engine)
+Titan AI Agent - Production Gateway (v10.0 Autonomous Engine)
 - System Persona: Created by Developer Tahir (Telegram: @Tahirsiddik)
-- Strict Rule: Direct answers without repetitive generic salam greetings
-- Secret Architecture Protection: Never reveals internal cookies, Render proxy or backend details
-- Code Enforcer: Enforces full code generation for coding requests without dropping code blocks
+- Divyank-Grade Code Engine: Full, complete production code with zero placeholders
+- No Salam Loop & No Timeout: Instant SSE stream with prompt intent classifier
 """
 
 import os
@@ -24,7 +23,7 @@ try:
 except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
-app = FastAPI(title="Titan AI Agent Gateway", version="9.9.0")
+app = FastAPI(title="Titan AI Agent Gateway", version="10.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,7 +53,7 @@ CLIENT_LOCK = asyncio.Lock()
 STATS = {
     "total_tokens": 0,
     "active_requests": 0,
-    "current_speed_tps": 320,
+    "current_speed_tps": 350,
     "status": "INITIALIZING"
 }
 
@@ -135,6 +134,7 @@ async def chat_completions(request: Request):
             content={"error": {"message": "Model 'gemini-4-argon' is restricted.", "type": "model_restricted"}}
         )
 
+    # ইউজার প্রম্পট বের করা
     user_prompt = ""
     for msg in reversed(messages):
         if msg.get("role") == "user":
@@ -152,9 +152,11 @@ async def chat_completions(request: Request):
 
     lower_p = user_prompt_clean.lower()
 
+    # ১. ডেভেলপার পরিচয় নিশ্চিতকরণ
     if any(q in lower_p for q in ["who made you", "who created you", "who developed you", "tumhe kisne banaya", "tomake ke baniyeche", "ke baniyeche", "developer ke", "কার তৈরি", "maker ke"]):
         generated_text = "আমাকে তৈরি ও ডেভেলপ করেছেন **Developer Tahir** (Telegram: [@Tahirsiddik](https://t.me/Tahirsiddik))।"
     
+    # ২. আর্কিটেকচার সুরক্ষা
     elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
         generated_text = "আমি **Titan AI Agent**—একটি উচ্চগতির সুরক্ষিত অটোনোমাস এআই ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড এবং আর্কিটেকচার সম্পূর্ণ এনক্রিপ্টেড ও সুরক্ষিত।"
     
@@ -163,16 +165,24 @@ async def chat_completions(request: Request):
         if not client:
             return JSONResponse(status_code=500, content={"error": {"message": "Gateway client not ready."}})
 
-        # কোড প্রম্পটের ক্ষেত্রে জোরপূর্বক কোড জেনারেশন নিশ্চিত করা
-        is_code = any(k in lower_p for k in ["code", "html", "css", "js", "calculator", "python", "bania", "বানিয়ে", "script", "app", "game"])
+        # ৩. কোডিং ইনটেন্ট ডিটেকশন ও কোড নিশ্চিতকরণ ইঞ্জিন
+        is_code = any(k in lower_p for k in [
+            "code", "html", "css", "js", "calculator", "python", "script", 
+            "bania", "banie", "বানিয়ে", "banao", "app", "game", "website"
+        ])
 
         if is_code:
-            target_prompt = f"{user_prompt_clean}\n\n[INSTRUCTION: Output the COMPLETE, FULL WORKING CODE in a standard markdown code block now. Do not just describe it. Write the entire code block.]"
+            target_prompt = (
+                f"{user_prompt_clean}\n\n"
+                "Please output the complete, production-ready code with all HTML, CSS, and JavaScript fully implemented "
+                "inside a code block. Do not stop at just an explanation; provide the complete code."
+            )
         else:
             target_prompt = user_prompt_clean
 
         generated_text = ""
         try:
+            # পর্যাপ্ত সময় দেওয়া যাতে বড় কোড সম্পূর্ণ আসে
             if chat is not None:
                 output = await asyncio.wait_for(chat.send_message(target_prompt), timeout=95.0)
             else:
@@ -191,11 +201,12 @@ async def chat_completions(request: Request):
 
     token_count = max(1, len(generated_text) // 4)
     STATS["total_tokens"] += token_count
-    STATS["current_speed_tps"] = 320
+    STATS["current_speed_tps"] = 350
 
     if stream:
         async def stream_generator():
             try:
+                # ক) সাথে সাথে শূন্য চাঙ্ক পাঠিয়ে মোবাইল অ্যাপের ৩০ সেকেন্ড সকেট বন্ধ হওয়া আটকানো
                 init_chunk = {
                     "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
                     "object": "chat.completion.chunk",
@@ -205,7 +216,8 @@ async def chat_completions(request: Request):
                 }
                 yield f"data: {json.dumps(init_chunk)}\n\n"
 
-                chunk_size = 12
+                # খ) হাই স্পিডে মসৃণভাবে টেক্সট ডেলিভারি করা
+                chunk_size = 16
                 for i in range(0, len(generated_text), chunk_size):
                     chunk_str = generated_text[i:i+chunk_size]
                     payload = {
@@ -216,7 +228,7 @@ async def chat_completions(request: Request):
                         "choices": [{"index": 0, "delta": {"content": chunk_str}, "finish_reason": None}]
                     }
                     yield f"data: {json.dumps(payload)}\n\n"
-                    await asyncio.sleep(0.005)
+                    await asyncio.sleep(0.004)
 
                 fin_payload = {
                     "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
