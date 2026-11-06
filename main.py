@@ -1,9 +1,9 @@
 """
-Titan AI Agent - Production Gateway (v9.8.0 High-Speed Engine)
+Titan AI Agent - Production Gateway (v9.9.0 Code Guarantee Engine)
 - System Persona: Created by Developer Tahir (Telegram: @Tahirsiddik)
 - Strict Rule: Direct answers without repetitive generic salam greetings
 - Secret Architecture Protection: Never reveals internal cookies, Render proxy or backend details
-- Long Code & Complex Script Optimization: Zero bot trigger & instant SSE keep-alive stream
+- Code Enforcer: Enforces full code generation for coding requests without dropping code blocks
 """
 
 import os
@@ -24,7 +24,7 @@ try:
 except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
-app = FastAPI(title="Titan AI Agent Gateway", version="9.8.0")
+app = FastAPI(title="Titan AI Agent Gateway", version="9.9.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -163,19 +163,25 @@ async def chat_completions(request: Request):
         if not client:
             return JSONResponse(status_code=500, content={"error": {"message": "Gateway client not ready."}})
 
-        target_prompt = user_prompt_clean
+        # কোড প্রম্পটের ক্ষেত্রে জোরপূর্বক কোড জেনারেশন নিশ্চিত করা
+        is_code = any(k in lower_p for k in ["code", "html", "css", "js", "calculator", "python", "bania", "বানিয়ে", "script", "app", "game"])
+
+        if is_code:
+            target_prompt = f"{user_prompt_clean}\n\n[INSTRUCTION: Output the COMPLETE, FULL WORKING CODE in a standard markdown code block now. Do not just describe it. Write the entire code block.]"
+        else:
+            target_prompt = user_prompt_clean
 
         generated_text = ""
         try:
             if chat is not None:
-                output = await asyncio.wait_for(chat.send_message(target_prompt), timeout=85.0)
+                output = await asyncio.wait_for(chat.send_message(target_prompt), timeout=95.0)
             else:
-                output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=85.0)
+                output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=95.0)
             generated_text = output.text or ""
         except Exception:
             try:
                 CURRENT_CHAT = client.start_chat()
-                output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=60.0)
+                output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=70.0)
                 generated_text = output.text or ""
             except Exception:
                 pass
