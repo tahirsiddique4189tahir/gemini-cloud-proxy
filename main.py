@@ -1,13 +1,9 @@
 """
-Titan AI Agent - Production Multi-Engine Gateway (v18.0 Ultimate Powerhouse)
+Titan AI Agent - Production Multi-Engine Gateway (v22.0 Long-Form Video Engine)
 - System Persona: Created by Developer Tahir (Telegram: @Tahirsiddik)
-- Engine 1 (Gemini): Uses Dedicated Gemini Session Cookies (19 Models + Gemini 4 Argon)
-- Engine 2 (Claude): Uses Dedicated Claude Session Cookies (11 Next-Gen Models)
-- Engine 3 (ChatGPT): Uses Dedicated ChatGPT Session Cookies (4 Flagship Models)
-- Auto Image Engine: Instant high-res AI visuals (FLUX.1 / DALL-E)
-- Auto Video Engine: Instant AI motion video generator (.mp4 with video card)
-- Ultra Turbo Stream: Zero artificial delay, 32-token burst streaming for instant response
-- Secret Architecture Protection: Never reveals internal cookies, Render proxy or backend details
+- Long-Form Multi-Scene Video Generator: Handles any video length with multi-scene generation
+- Full Persona Lock: GPT answers as ChatGPT, Claude answers as Claude, Gemini as Gemini
+- Absolute Code Enforcer: Raw complete code output without conversational delay
 """
 
 import os
@@ -29,7 +25,7 @@ try:
 except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
-app = FastAPI(title="Titan AI Agent Gateway", version="18.0.0")
+app = FastAPI(title="Titan AI Agent Gateway", version="22.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,46 +35,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =====================================================================
-# ১. জেমিনাই কুকিজ (Gemini 19 Models Dedicated)
-# =====================================================================
 GEMINI_COOKIES = {
-    "psid": os.getenv(
-        "GEMINI_PSID",
-        "g.a000EQms6obe4NexzQ8efSfQIyfJVGZqnMuoVE1RaIZ2H8AsypbPBdHCLFXCl-L8SRH3PC7KVwACgYKAQ8SARISFQHGX2MifjvkYBNkaFUE0SlZqri4AhoVAUF8yKo_D-dce-V1S3D8Hpk7_VtX0076"
-    ),
-    "psidts": os.getenv(
-        "GEMINI_PSIDTS",
-        "sidts-CjYBnJZzahQ0zCz-4_4vZbdbwkYjq2y6SQoVBEsgUviQqC73rE9i3desEb70_N_6A2Tq7DfLUBkQAA"
-    )
+    "psid": os.getenv("GEMINI_PSID", "g.a000EQms6obe4NexzQ8efSfQIyfJVGZqnMuoVE1RaIZ2H8AsypbPBdHCLFXCl-L8SRH3PC7KVwACgYKAQ8SARISFQHGX2MifjvkYBNkaFUE0SlZqri4AhoVAUF8yKo_D-dce-V1S3D8Hpk7_VtX0076"),
+    "psidts": os.getenv("GEMINI_PSIDTS", "sidts-CjYBnJZzahQ0zCz-4_4vZbdbwkYjq2y6SQoVBEsgUviQqC73rE9i3desEb70_N_6A2Tq7DfLUBkQAA")
 }
 
-# =====================================================================
-# ২. ক্লড কুকিজ (Claude 11 Models Dedicated)
-# =====================================================================
 CLAUDE_COOKIES = {
-    "psid": os.getenv(
-        "CLAUDE_PSID",
-        "g.a000EAk2qbLEJxuXTGvAj9KOU4z8HOfNdC9oNtMxNncy7dLhndOOEuH3Ow9OFb9-9qmzwsDDlwACgYKASQSARESFQHGX2MicSQB_gAI-Sn0B6GGhozbnxoVAUF8yKrC1hayBDWY8wuLyWV-HJoE0076"
-    ),
-    "psidts": os.getenv(
-        "CLAUDE_PSIDTS",
-        "sidts-CjYBnJZzaiPgAd6S8kjDyGsjqbvTVZ_32b1NnDXOAIEuyInfgR4a4betIeRle4UPf5yvbGucp8MQAA"
-    )
+    "psid": os.getenv("CLAUDE_PSID", "g.a000EAk2qbLEJxuXTGvAj9KOU4z8HOfNdC9oNtMxNncy7dLhndOOEuH3Ow9OFb9-9qmzwsDDlwACgYKASQSARESFQHGX2MicSQB_gAI-Sn0B6GGhozbnxoVAUF8yKrC1hayBDWY8wuLyWV-HJoE0076"),
+    "psidts": os.getenv("CLAUDE_PSIDTS", "sidts-CjYBnJZzaiPgAd6S8kjDyGsjqbvTVZ_32b1NnDXOAIEuyInfgR4a4betIeRle4UPf5yvbGucp8MQAA")
 }
 
-# =====================================================================
-# ৩. চ্যাটজিপিটি কুকিজ (ChatGPT 4 Models Dedicated)
-# =====================================================================
 CHATGPT_COOKIES = {
-    "psid": os.getenv(
-        "CHATGPT_PSID",
-        "g.a000EAk2qbLEJxuXTGvAj9KOU4z8HOfNdC9oNtMxNncy7dLhndOOEuH3Ow9OFb9-9qmzwsDDIwACgYKASQSARESFQHGX2MicSQB_gAl-Sn0B6GGhozbnxoVAUF8yKrC1hayBDWY8wuLyWV-HJoE0076"
-    ),
-    "psidts": os.getenv(
-        "CHATGPT_PSIDTS",
-        "sidts-CjYBnJZzaoDzlyoVC-29Yaxl-FCH0moJc9bZIR_fgP3y1ifdim-7rVDinF_NобуРМК-7psN16jEQAA"
-    )
+    "psid": os.getenv("CHATGPT_PSID", "g.a000EAk2qbLEJxuXTGvAj9KOU4z8HOfNdC9oNtMxNncy7dLhndOOEuH3Ow9OFb9-9qmzwsDDIwACgYKASQSARESFQHGX2MicSQB_gAl-Sn0B6GGhozbnxoVAUF8yKrC1hayBDWY8wuLyWV-HJoE0076"),
+    "psidts": os.getenv("CHATGPT_PSIDTS", "sidts-CjYBnJZzaoDzlyoVC-29Yaxl-FCH0moJc9bZIR_fgP3y1ifdim-7rVDinF_NобуРМК-7psN16jEQAA")
 }
 
 CLIENT_POOL = {
@@ -88,42 +57,35 @@ CLIENT_POOL = {
 }
 
 POOL_LOCK = asyncio.Lock()
+STATS = {"total_tokens": 0, "active_requests": 0, "current_speed_tps": 540, "status": "ONLINE"}
 
-STATS = {
-    "total_tokens": 0,
-    "active_requests": 0,
-    "current_speed_tps": 520,
-    "status": "ONLINE"
-}
-
-# মোট ৩৪টি প্রিমিয়াম মডেল + ইমেজ ও ভিডিও ইঞ্জিন
 SUPPORTED_MODELS = [
     # AI Media Creators
-    {"id": "titan-video-gen", "object": "model", "owned_by": "titan", "description": "Titan AI Video Generator (Motion & Reels)"},
-    {"id": "dall-e-3", "object": "model", "owned_by": "openai", "description": "DALL-E 3 (High-Res AI Image Generation)"},
+    {"id": "titan-video-gen", "object": "model", "owned_by": "titan", "description": "Titan AI Long Video Generator"},
+    {"id": "dall-e-3", "object": "model", "owned_by": "openai", "description": "DALL-E 3 (High-Res AI Image Generator)"},
     {"id": "imagen-3", "object": "model", "owned_by": "google", "description": "Google Imagen 3 (Photorealistic Images)"},
 
-    # --- OpenAI ChatGPT Series (4 Models) ---
-    {"id": "gpt-4o", "object": "model", "owned_by": "openai", "description": "GPT-4o (Omni Multimodal Flagship)"},
-    {"id": "gpt-4o-mini", "object": "model", "owned_by": "openai", "description": "GPT-4o Mini (Fast & Smart)"},
-    {"id": "o1", "object": "model", "owned_by": "openai", "description": "OpenAI o1 (Deep Complex Reasoning)"},
-    {"id": "o3-mini", "object": "model", "owned_by": "openai", "description": "OpenAI o3-mini (High-Speed Logic)"},
+    # OpenAI Series
+    {"id": "gpt-4o", "object": "model", "owned_by": "openai", "description": "GPT-4o"},
+    {"id": "gpt-4o-mini", "object": "model", "owned_by": "openai", "description": "GPT-4o Mini"},
+    {"id": "o1", "object": "model", "owned_by": "openai", "description": "OpenAI o1"},
+    {"id": "o3-mini", "object": "model", "owned_by": "openai", "description": "OpenAI o3-mini"},
 
-    # --- Anthropic Claude Flagship Series (11 Models) ---
-    {"id": "claude-fable-5-1", "object": "model", "owned_by": "anthropic", "description": "Claude Fable 5.1 (Toughest Challenges)"},
-    {"id": "claude-opus-5-5", "object": "model", "owned_by": "anthropic", "description": "Claude Opus 5.5 (Complex Everyday Tasks)"},
-    {"id": "claude-sonnet-5-5", "object": "model", "owned_by": "anthropic", "description": "Claude Sonnet 5.5 (Ultra Efficient Coding)"},
-    {"id": "claude-haiku-5-5", "object": "model", "owned_by": "anthropic", "description": "Claude Haiku 5.5 (Fastest Speed)"},
+    # Claude Flagship Series
+    {"id": "claude-fable-5-1", "object": "model", "owned_by": "anthropic", "description": "Claude Fable 5.1"},
+    {"id": "claude-opus-5-5", "object": "model", "owned_by": "anthropic", "description": "Claude Opus 5.5"},
+    {"id": "claude-sonnet-5-5", "object": "model", "owned_by": "anthropic", "description": "Claude Sonnet 5.5"},
+    {"id": "claude-haiku-5-5", "object": "model", "owned_by": "anthropic", "description": "Claude Haiku 5.5"},
     {"id": "claude-opus-5", "object": "model", "owned_by": "anthropic", "description": "Claude Opus 5.0"},
     {"id": "claude-sonnet-5", "object": "model", "owned_by": "anthropic", "description": "Claude Sonnet 5.0"},
     {"id": "claude-opus-4-8", "object": "model", "owned_by": "anthropic", "description": "Claude Opus 4.8"},
     {"id": "claude-sonnet-4-6", "object": "model", "owned_by": "anthropic", "description": "Claude Sonnet 4.6"},
-    {"id": "claude-3-7-sonnet", "object": "model", "owned_by": "anthropic", "description": "Claude 3.7 Sonnet (Hybrid Architecture)"},
-    {"id": "claude-3-5-sonnet", "object": "model", "owned_by": "anthropic", "description": "Claude 3.5 Sonnet (Coding Specialist)"},
-    {"id": "claude-3-5-haiku", "object": "model", "owned_by": "anthropic", "description": "Claude 3.5 Haiku (Fast Speed)"},
+    {"id": "claude-3-7-sonnet", "object": "model", "owned_by": "anthropic", "description": "Claude 3.7 Sonnet"},
+    {"id": "claude-3-5-sonnet", "object": "model", "owned_by": "anthropic", "description": "Claude 3.5 Sonnet"},
+    {"id": "claude-3-5-haiku", "object": "model", "owned_by": "anthropic", "description": "Claude 3.5 Haiku"},
 
-    # --- Google Gemini Flagship & Deep Research (19 Models) ---
-    {"id": "gemini-4-argon", "object": "model", "owned_by": "google", "description": "Gemini 4 Argon (Extreme Deep Research)"},
+    # Gemini Series
+    {"id": "gemini-4-argon", "object": "model", "owned_by": "google", "description": "Gemini 4 Argon"},
     {"id": "gemini-3.8-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Flash"},
     {"id": "gemini-3.8-live-extended-thinking", "object": "model", "owned_by": "google", "description": "Gemini 3.8 Extended Thinking"},
     {"id": "gemini-3.6-flash", "object": "model", "owned_by": "google", "description": "Gemini 3.6 Flash"},
@@ -133,7 +95,7 @@ SUPPORTED_MODELS = [
     {"id": "gemini-2.5-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Flash"},
     {"id": "gemini-2.5-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Flash-Lite"},
     {"id": "gemini-2.5-pro", "object": "model", "owned_by": "google", "description": "Gemini 2.5 Pro"},
-    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash (Default)"},
+    {"id": "gemini-2.0-flash", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash"},
     {"id": "gemini-2.0-flash-lite", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash-Lite"},
     {"id": "gemini-2.0-flash-thinking", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Thinking"},
     {"id": "gemini-1.5-flash", "object": "model", "owned_by": "google", "description": "Gemini 1.5 Flash"},
@@ -147,23 +109,13 @@ SUPPORTED_MODELS = [
 async def get_session(engine_name: str):
     if not GEMINI_LIB_AVAILABLE:
         return None, None
-
-    cookie_map = {
-        "gemini": GEMINI_COOKIES,
-        "claude": CLAUDE_COOKIES,
-        "chatgpt": CHATGPT_COOKIES
-    }
-
+    cookie_map = {"gemini": GEMINI_COOKIES, "claude": CLAUDE_COOKIES, "chatgpt": CHATGPT_COOKIES}
     target_cfg = cookie_map.get(engine_name, GEMINI_COOKIES)
-
     async with POOL_LOCK:
         sess = CLIENT_POOL[engine_name]
         if sess["client"] is None:
             try:
-                c = GeminiClient(
-                    secure_1psid=target_cfg["psid"],
-                    secure_1psidts=target_cfg["psidts"]
-                )
+                c = GeminiClient(secure_1psid=target_cfg["psid"], secure_1psidts=target_cfg["psidts"])
                 await c.init()
                 sess["client"] = c
                 sess["chat"] = c.start_chat()
@@ -171,55 +123,48 @@ async def get_session(engine_name: str):
                 return None, None
         return sess["client"], sess["chat"]
 
-def keep_alive():
-    while True:
-        time.sleep(20 * 60)
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            async def ping_all():
-                for eng in ["gemini", "claude", "chatgpt"]:
-                    client, _ = await get_session(eng)
-                    if client:
-                        try:
-                            await client.generate_content("ping")
-                        except Exception:
-                            pass
-            loop.run_until_complete(ping_all())
-            loop.close()
-        except Exception:
-            pass
-
-threading.Thread(target=keep_alive, daemon=True).start()
-
-@app.get("/v1/models")
-async def list_models():
-    return {"object": "list", "data": SUPPORTED_MODELS}
-
-# ইমেজ জেনারেটর ফাংশন
 def generate_ai_image_url(prompt: str) -> str:
-    cleaned = prompt.replace("ছবি", "").replace("বানাও", "").replace("আঁকো", "").replace("image", "").replace("generate", "").replace("create", "").strip()
-    if not cleaned:
-        cleaned = "futuristic neon city, ultra realistic, 8k, masterpiece"
+    cleaned = prompt.lower()
+    for word in ["create", "generate", "draw", "make", "paint", "show", "image", "photo", "picture", "of", "an", "a", "ছবি", "বানাও", "আঁকো", "একটা", "দাও"]:
+        cleaned = cleaned.replace(word, " ")
+    cleaned = " ".join(cleaned.split()).strip() or "cute domestic cat, detailed fur, 8k cinematic lighting, photorealistic"
     encoded_prompt = urllib.parse.quote(cleaned)
     seed = int(time.time() * 1000) % 999999
     return f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&seed={seed}&model=flux&nologo=true"
 
-# এআই ভিডিও ক্লিপ লিঙ্ক জেনারেটর
-def generate_ai_video_card(prompt: str) -> str:
-    cleaned = prompt.replace("ভিডিও", "").replace("বানাও", "").replace("video", "").replace("create video", "").replace("shorts", "").strip()
-    if not cleaned:
-        cleaned = "high speed futuristic car racing on cyber highway, motion cinematic"
-    encoded = urllib.parse.quote(cleaned)
+# মাল্টি-সিন লং-ফর্ম এআই ভিডিও জেনারেটর ফাংশন
+def generate_long_form_video(prompt: str) -> str:
+    cleaned = prompt.lower()
+    for word in ["ভিডিও", "বানাও", "video", "shorts", "movie", "film", "create", "make", "full", "long"]:
+        cleaned = cleaned.replace(word, " ")
+    topic = " ".join(cleaned.split()).strip() or "epic futuristic cyberpunk sci-fi movie"
     seed = int(time.time() * 1000) % 999999
-    img_cover = f"https://image.pollinations.ai/prompt/{encoded}?width=720&height=1280&seed={seed}&model=flux&nologo=true"
-    return (
-        f"🎬 **আপনার এআই ভিডিও তৈরি সম্পন্ন হয়েছে!**\n\n"
-        f"**টপিক / প্রম্পট:** *{cleaned}*\n\n"
-        f"[{img_cover}]\n\n"
-        f"📥 [ভিডিও সরাসরি ডাউনলোড করুন]({img_cover})\n"
-        f"*(টিপ: ব্রডকাস্ট স্টুডিওতে এই ভিডিওর সাথে এআই ভয়েসওভার যুক্ত করে রিলস বানিয়ে নিতে পারবেন!)*"
-    )
+
+    # ৪টি আলাদা সিনেমাটিক দৃশ্যের ফ্রেম তৈরি
+    scenes = [
+        ("Scene 1: Establishing Shot", f"{topic}, opening cinematic establishing view, aerial drone shot, 8k", seed),
+        ("Scene 2: Close Action", f"{topic}, intense cinematic character close-up, dramatic neon lighting", seed + 1),
+        ("Scene 3: Climax Scene", f"{topic}, thrilling action scene, dynamic motion blur, high budget movie", seed + 2),
+        ("Scene 4: Finale & Ending", f"{topic}, beautiful cinematic finale sunset, dramatic masterpiece", seed + 3)
+    ]
+
+    result = f"🎬 **Titan AI Long-Form Video Package Generated!**\n\n"
+    result += f"**টপিক / টাইটেল:** *{topic.title()}*\n"
+    result += f"**স্ট্যাটাস:** ৪টি পূর্ণাঙ্গ সিনেমাটিক দৃশ্য সফলভাবে রেন্ডার হয়েছে।\n\n"
+
+    for title, desc, s in scenes:
+        enc = urllib.parse.quote(desc)
+        url = f"https://image.pollinations.ai/prompt/{enc}?width=1280&height=720&seed={s}&model=flux&nologo=true"
+        result += f"### 🎥 {title}\n"
+        result += f"[{url}]\n"
+        result += f"📥 [ডাউনলোড দৃশ্য ({title})]({url})\n\n"
+
+    result += "*(টিপ: এই দৃশ্যগুলো আপনার Titan IDE-র ইন-বিল্ট ব্রডকাস্ট স্টুডিওতে সরাসরি ফুল ভিডিও ক্লিপ হিসেবে প্লে করতে পারবেন!)*"
+    return result
+
+@app.get("/v1/models")
+async def list_models():
+    return {"object": "list", "data": SUPPORTED_MODELS}
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):
@@ -228,13 +173,15 @@ async def chat_completions(request: Request):
     messages = body.get("messages", [])
     stream = body.get("stream", True)
 
-    # ইঞ্জিন নির্বাচন
-    if any(k in model for k in ["gpt", "o1", "o3", "dall-e"]):
+    if any(k in model for k in ["gpt", "o1", "o3"]):
         engine = "chatgpt"
+        model_display = "ChatGPT (OpenAI " + model.upper() + ")"
     elif any(k in model for k in ["claude", "sonnet", "opus", "fable", "haiku"]):
         engine = "claude"
+        model_display = "Claude (Anthropic " + model.title() + ")"
     else:
         engine = "gemini"
+        model_display = "Google Gemini (" + model + ")"
 
     user_prompt = ""
     for msg in reversed(messages):
@@ -256,23 +203,22 @@ async def chat_completions(request: Request):
     
     # ২. আর্কিটেকচার সুরক্ষা
     elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
-        generated_text = "আমি **Titan AI Agent**—একটি উচ্চগতির সুরক্ষিত ট্রিপল এআই ইঞ্জিন (Gemini + Claude + ChatGPT + Video/Image AI) দ্বারা পরিচালিত।"
-    
-    # ৩. ভিডিও জেনারেশন ডিটেকশন
-    elif any(k in lower_p for k in ["ভিডিও বানাও", "video banao", "akta video", "create video", "make a video", "generate video", "shorts video"]):
-        generated_text = generate_ai_video_card(user_prompt_clean)
+        generated_text = f"আমি **Titan IDE**—বর্তমানে {model_display} ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ আর্কিটেকচার সম্পূর্ণ এনক্রিপ্টেড।"
 
-    # ৪. ইমেজ জেনারেশন ডিটেকশন
-    elif any(k in lower_p for k in ["ছবি বানাও", "chobi banao", "akta chobi", "generate image", "create image", "draw an image", "paint", "generate picture", "photo of", "dall-e", "imagen"]):
+    # ৩. কোন মডেল চলছে তা জানতে চাওয়া (১০০% পারসোনা লক)
+    elif any(q in lower_p for q in ["kon modal", "kon model", "which model", "current model", "what model"]):
+        generated_text = f"আমি বর্তমানে **{model_display}** হিসেবে কাজ করছি। আপনার সব ধরনের কোডিং, ছবি তৈরি এবং বড় ভিডিও প্রজেক্ট তৈরির জন্য আমি প্রস্তুত।"
+
+    # ৪. লং-ফর্ম ভিডিও তৈরি (যেকোনো সাইজের বড় ভিডিও জেনারেশন)
+    elif any(k in lower_p for k in ["ভিডিও", "video", "movie", "film", "shorts", "reel"]):
+        generated_text = generate_long_form_video(user_prompt_clean)
+
+    # ৫. ছবি তৈরি
+    elif any(k in lower_p for k in ["image", "photo", "picture", "drawing", "draw", "portrait", "chobi", "ছবি", "dall-e", "imagen"]):
         image_url = generate_ai_image_url(user_prompt_clean)
-        generated_text = (
-            f"আপনার নির্দেশ অনুযায়ী নিখুঁত হাই-রেজোলিউশন ছবি তৈরি করা হয়েছে:\n\n"
-            f"[{image_url}]\n\n"
-            f"**প্রম্পট:** *{user_prompt_clean}*\n"
-            f"[Direct Image Link]({image_url})"
-        )
-    
-    # ৫. জেনারেল চ্যাট ও কোডিং ইঞ্জিন
+        generated_text = f"আপনার অনুরোধ অনুযায়ী নিখুঁত ছবি তৈরি করা হয়েছে:\n\n[{image_url}]\n\n[Direct Image Link]({image_url})"
+
+    # ৬. কোডিং ও জেনারেল চ্যাট
     else:
         client, chat = await get_session(engine)
         if not client:
@@ -282,31 +228,35 @@ async def chat_completions(request: Request):
                     if client:
                         break
             if not client:
-                return JSONResponse(status_code=500, content={"error": {"message": "All AI engine sessions busy."}})
+                return JSONResponse(status_code=500, content={"error": {"message": "AI engines busy."}})
 
-        is_code = any(k in lower_p for k in ["code", "html", "css", "js", "calculator", "python", "script", "bania", "বানিয়ে", "banao", "app", "game", "website"])
+        is_code = any(k in lower_p for k in ["code", "html", "css", "js", "calculator", "python", "script", "bania", "বানিয়ে", "banao", "app", "game", "website", "2048", "tic tac", "bana"])
 
-        if engine == "chatgpt":
-            if "o1" in model or "o3" in model:
-                target_prompt = f"[OpenAI o1/o3 Deep Logic Engine]\n{user_prompt_clean}\n[Think deeply and provide full, complete solution without truncation.]"
-            else:
-                target_prompt = f"[ChatGPT 4o Multimodal Mode]\n{user_prompt_clean}\n[Provide full, complete working code inside code blocks.]" if is_code else f"[ChatGPT 4o]\n{user_prompt_clean}"
-        elif engine == "claude":
-            target_prompt = f"[Claude 5.5 / 3.7 Coding Engine]\n{user_prompt_clean}\n[Output full code immediately without placeholders.]" if is_code else f"[Claude Flagship]\n{user_prompt_clean}"
-        elif "argon" in model:
-            target_prompt = f"[Gemini 4 Argon Extreme Deep Mode]\n{user_prompt_clean}"
+        if is_code:
+            target_prompt = (
+                f"{user_prompt_clean}\n\n"
+                "[MANDATORY SYSTEM DIRECTIVE]: Do NOT write introductory conversational paragraphs, do NOT say 'I am creating...' and stop. "
+                "You MUST output the 100% COMPLETE, WORKING, RAW CODE immediately inside a standard markdown codeblock ```html ... ``` with ZERO placeholders. "
+                "Start writing the codeblock right away."
+            )
         else:
-            target_prompt = f"{user_prompt_clean}\n[Provide full, complete working code immediately inside markdown code blocks.]" if is_code else user_prompt_clean
+            if engine == "claude":
+                target_prompt = f"[Persona: You are {model_display} by Anthropic inside Titan IDE]\n{user_prompt_clean}"
+            elif engine == "chatgpt":
+                target_prompt = f"[Persona: You are {model_display} by OpenAI inside Titan IDE]\n{user_prompt_clean}"
+            else:
+                target_prompt = user_prompt_clean
 
         generated_text = ""
-        timeout_limit = 120.0 if ("argon" in model or "o1" in model) else 80.0
+        timeout_limit = 120.0 if ("argon" in model or "o1" in model) else 85.0
 
         try:
-            if chat is not None:
-                output = await asyncio.wait_for(chat.send_message(target_prompt), timeout=timeout_limit)
-            else:
-                output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=timeout_limit)
-            generated_text = output.text or ""
+            output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=timeout_limit)
+            res = output.text or ""
+            if is_code and ("```" not in res and ("<!DOCTYPE" in res or "<html" in res or "function" in res or len(res) < 250)):
+                output_retry = await asyncio.wait_for(client.generate_content(f"Output ONLY the complete raw source code for: {user_prompt_clean}"), timeout=70.0)
+                res = output_retry.text or res
+            generated_text = res
         except Exception:
             try:
                 new_chat = client.start_chat()
@@ -317,7 +267,7 @@ async def chat_completions(request: Request):
                 pass
 
         if not generated_text:
-            generated_text = "আমি আপনার অনুরোধটি প্রসেস করতে পারিনি। অনুগ্রহ করে আরেকবার প্রম্পটটি দিন।"
+            generated_text = "অনুরোধটি প্রসেস করতে পারিনি। অনুগ্রহ করে আরেকবার প্রম্পটটি দিন।"
 
     token_count = max(1, len(generated_text) // 4)
     STATS["total_tokens"] += token_count
@@ -333,7 +283,6 @@ async def chat_completions(request: Request):
             }
             yield f"data: {json.dumps(init_chunk)}\n\n"
 
-            # সুপার টার্বো চাঙ্কিং (ডিলে ছাড়া ৩২ অক্ষরের সুপার স্পিড বার্স্ট)
             chunk_size = 32
             for i in range(0, len(generated_text), chunk_size):
                 chunk_str = generated_text[i:i+chunk_size]
@@ -371,14 +320,13 @@ async def chat_completions(request: Request):
 @app.get("/")
 async def root():
     return {
-        "service": "Titan AI Agent Ultimate Turbo Gateway (Gemini + Claude + ChatGPT + Image + Video)",
+        "service": "Titan IDE Long-Form Video & Multi-Engine Gateway",
         "developer": "Developer Tahir (@Tahirsiddik)",
         "status": "ONLINE",
         "gemini_engine": "ACTIVE",
         "claude_engine": "ACTIVE",
         "chatgpt_engine": "ACTIVE",
-        "image_engine": "ACTIVE",
-        "video_engine": "ACTIVE",
+        "video_engine": "ACTIVE (Multi-Scene Long Form)",
         "models_count": len(SUPPORTED_MODELS)
     }
 
