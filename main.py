@@ -1,16 +1,16 @@
 """
-Titan IDE - Omni Ultimate Production Gateway (v28.0 Pure AI Edition)
+Titan IDE - Omni Ultimate Production Gateway (v29.0 Master Live & Phone Control Edition)
 Developer: Developer Tahir (Telegram: @Tahirsiddik)
 Platform: Titan IDE Mobile & Cloud Proxy (Render)
 Target: https://gemini-cloud-proxy-2.onrender.com/v1
 
-100% PURE DYNAMIC AI - ZERO HARDCODED HTML:
-- Every line of code, HTML5 Canvas game, script, or app is generated LIVE by the selected AI model.
-- Multi-engine auto-failover: Gemini -> Claude -> ChatGPT.
-- Gemini 2.0 Flash Live & Realtime Multimodal models for ultra-low latency voice.
-- Titan Action Protocol ([TITAN_ACTION: {...}]) for native phone automation.
-- Strict persona purity (GPT-4o / Claude / Gemini identity isolation).
-- Zero paid API keys (100% free dedicated cookie pools).
+100% PURE DYNAMIC AI & FULL PHONE AUTOMATION:
+- Zero hardcoded HTML: Every script, game, and app is generated LIVE by AI.
+- Real-time Gemini Live & Multimodal Models for conversational voice and camera vision.
+- WebSocket endpoint (/v1/live) & HTTP SSE streaming for ultra-low latency.
+- Full Maya AI-Level Phone Action Engine ([TITAN_ACTION: {...}]).
+- Multi-engine auto-failover (Gemini -> Claude -> ChatGPT) with zero paid API keys.
+- Complete persona isolation & developer branding (Developer Tahir).
 """
 
 import os
@@ -20,8 +20,9 @@ import uuid
 import asyncio
 import urllib.parse
 import re
+import base64
 from typing import List, Dict, Any, Optional
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -34,7 +35,7 @@ except ImportError:
 
 app = FastAPI(
     title="Titan IDE Omni Live Gateway",
-    version="28.0.0",
+    version="29.0.0",
     description="Engineered by Developer Tahir (@Tahirsiddik)"
 )
 
@@ -74,7 +75,7 @@ POOL_LOCK = asyncio.Lock()
 STATS = {"total_tokens": 0, "active_requests": 0, "status": "ONLINE"}
 
 # =====================================================================
-# সম্পূর্ণ মডেল ক্যাটালগ (Gemini Live & Realtime সহ)
+# সম্পূর্ণ মডেল ক্যাটালগ (Gemini Live & Realtime সহ ৩৪+ মডেল)
 # =====================================================================
 SUPPORTED_MODELS = [
     # AI Media & Generation
@@ -82,10 +83,10 @@ SUPPORTED_MODELS = [
     {"id": "titan-video-gen", "object": "model", "owned_by": "titan", "description": "Titan Omni Long-Form Video Generator"},
     {"id": "imagen-3", "object": "model", "owned_by": "google", "description": "Google Imagen 3 (Photorealistic AI)"},
 
-    # Gemini Live & Realtime Series
+    # Gemini Live & Realtime Series (Ultra Low-Latency Audio/Perception)
     {"id": "gemini-2.0-flash-live", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Live (Realtime Bidirectional Voice)"},
-    {"id": "gemini-2.0-flash-realtime", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Realtime (Ultra-Low Latency)"},
-    {"id": "gemini-2.0-multimodal-live", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Multimodal Live (Camera + Voice)"},
+    {"id": "gemini-2.0-flash-realtime", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Realtime (Low-Latency Audio Engine)"},
+    {"id": "gemini-2.0-multimodal-live", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Multimodal Live (Camera Vision + Voice)"},
     {"id": "gemini-live-omni", "object": "model", "owned_by": "google", "description": "Gemini Live Omni Phone Controller"},
 
     # OpenAI Series (ChatGPT Engine)
@@ -155,12 +156,19 @@ async def get_session(engine_name: str, force_reinit: bool = False):
         return sess["client"], sess["chat"]
 
 # =====================================================================
-# ফোন অটোমেশন ডিরেক্টিভ জেনারেটর (Titan Action Protocol)
+# পূর্ণাঙ্গ ফোন অটোমেশন ডিরেক্টিভ জেনারেটর (Titan Action Protocol v29.0)
 # =====================================================================
 def detect_phone_action(prompt: str) -> Optional[str]:
-    lower_p = prompt.lower()
+    lower_p = prompt.lower().strip()
     
-    # অ্যাপ ওপেন
+    # ১. নির্দিষ্ট গান সহ ইউটিউব চালানো
+    if any(k in lower_p for k in ["youtube e", "youtube te", "play on youtube"]) and any(w in lower_p for w in ["play", "chalao", "bajna", "gaan"]):
+        song = re.sub(r'^(play|youtube e|youtube te|chalao|play on youtube)\s*', '', lower_p)
+        song = re.sub(r'\s*(chalao|play|gaan|bajna)$', '', song).strip() or "trending music"
+        action = {"type": "PLAY_YOUTUBE", "query": song}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nYouTube-এ আপনার পছন্দের গান '{song}' প্লে করে দিচ্ছি, ডার্লিং!"
+
+    # ২. অ্যাপ ওপেন
     app_patterns = {
         "youtube": ("com.google.android.youtube", "YouTube"),
         "whatsapp": ("com.whatsapp", "WhatsApp"),
@@ -170,14 +178,15 @@ def detect_phone_action(prompt: str) -> Optional[str]:
         "settings": ("com.android.settings", "Settings"),
         "notes": ("com.google.android.keep", "Notes"),
         "facebook": ("com.facebook.katana", "Facebook"),
-        "instagram": ("com.instagram.android", "Instagram")
+        "instagram": ("com.instagram.android", "Instagram"),
+        "telegram": ("org.telegram.messenger", "Telegram")
     }
     for app_key, (pkg, name) in app_patterns.items():
         if any(w in lower_p for w in [f"open {app_key}", f"{app_key} kholo", f"{app_key} open koro", f"{app_key} chalao"]):
             action = {"type": "OPEN_APP", "package": pkg, "app_name": name}
-            return f"[TITAN_ACTION: {json.dumps(action)}]\nআমি {name} ওপেন করছি, ডার্লিং!"
+            return f"[TITAN_ACTION: {json.dumps(action)}]\nআমি {name} ওপেন করছি!"
 
-    # ফ্ল্যাশলাইট / টর্চ
+    # ৩. ফ্ল্যাশলাইট / টর্চ কন্ট্রোল
     if any(w in lower_p for w in ["torch on", "torch jalao", "flashlight on", "light on", "ফ্ল্যাশলাইট জ্বালাও"]):
         action = {"type": "TORCH", "state": True}
         return f"[TITAN_ACTION: {json.dumps(action)}]\nফ্ল্যাশলাইট অন করে দিয়েছি!"
@@ -185,29 +194,59 @@ def detect_phone_action(prompt: str) -> Optional[str]:
         action = {"type": "TORCH", "state": False}
         return f"[TITAN_ACTION: {json.dumps(action)}]\nফ্ল্যাশলাইট বন্ধ করা হয়েছে।"
 
-    # ক্যামেরা দিয়ে ছবি তোলা
+    # ৪. ক্যামেরা দিয়ে ছবি তোলা
     if any(w in lower_p for w in ["chobi tolo", "take photo", "capture photo", "ছবি তোলো", "take a picture"]):
-        cam = "front" if "front" in lower_p or "selfie" in lower_p else "back"
+        cam = "front" if any(w in lower_p for w in ["front", "selfie", "নিজের"]) else "back"
         action = {"type": "TAKE_PHOTO", "camera": cam}
         return f"[TITAN_ACTION: {json.dumps(action)}]\n{cam.title()} ক্যামেরা দিয়ে ছবি ক্যাপচার করছি!"
 
-    # স্ক্রিন রিড করা
+    # ৫. স্ক্রিন রিডার ও ভিশন
     if any(w in lower_p for w in ["screen read", "read screen", "screen e ki", "স্ক্রিন পড়ো", "screen dekho"]):
         action = {"type": "READ_SCREEN"}
         return f"[TITAN_ACTION: {json.dumps(action)}]\nআপনার ফোনের স্ক্রিন স্ক্যান ও রিড করছি..."
 
-    # কল ম্যানেজমেন্ট
+    # ৬. কল ম্যানেজমেন্ট (সিম প্রেফারেন্স সহ)
     if any(w in lower_p for w in ["call koro", "call lagao", "phone koro", "কল করো", "make call"]):
         target = re.sub(r'^(call|call koro|phone koro|কল করো)\s*', '', lower_p).strip() or "Owner"
-        action = {"type": "MAKE_CALL", "target": target, "sim": 1}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\n{target}-কে কল লাগাচ্ছি..."
+        sim_num = 2 if "sim 2" in lower_p or "sim2" in lower_p else 1
+        action = {"type": "MAKE_CALL", "target": target, "sim": sim_num}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nসিম {sim_num} দিয়ে {target}-কে কল লাগাচ্ছি..."
 
-    # এসওএস ইমার্জেন্সি
+    # ৭. অ্যালার্ম সেট করা
+    if any(w in lower_p for w in ["alarm", "অ্যালার্ম"]):
+        time_match = re.search(r'(\d{1,2}[:.]\d{2}|\d{1,2}\s*(am|pm|টা))', lower_p)
+        alarm_time = time_match.group(0) if time_match else "07:00 AM"
+        action = {"type": "SET_ALARM", "time": alarm_time}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nআপনার জন্য {alarm_time}-এ অ্যালার্ম সেট করে দিয়েছি!"
+
+    # ৮. ভলিউম নিয়ন্ত্রণ
+    if any(w in lower_p for w in ["volume barao", "sound barao", "volume up"]):
+        action = {"type": "VOLUME", "direction": "up"}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nভলিউম বাড়িয়ে দেওয়া হয়েছে।"
+    elif any(w in lower_p for w in ["volume komao", "sound komao", "volume down"]):
+        action = {"type": "VOLUME", "direction": "down"}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nভলিউম কমিয়ে দেওয়া হয়েছে।"
+
+    # ৯. ওয়াইফাই ও ব্লুটুথ টগল
+    if any(w in lower_p for w in ["wifi on", "wifi চালু"]):
+        action = {"type": "SYSTEM_TOGGLE", "feature": "wifi", "state": True}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nওয়াইফাই অন করা হয়েছে।"
+    elif any(w in lower_p for w in ["wifi off", "wifi বন্ধ"]):
+        action = {"type": "SYSTEM_TOGGLE", "feature": "wifi", "state": False}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nওয়াইফাই বন্ধ করা হয়েছে।"
+    elif any(w in lower_p for w in ["bluetooth on", "ব্লুটুথ চালু"]):
+        action = {"type": "SYSTEM_TOGGLE", "feature": "bluetooth", "state": True}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nব্লুটুথ অন করা হয়েছে।"
+    elif any(w in lower_p for w in ["bluetooth off", "ব্লুটুথ বন্ধ"]):
+        action = {"type": "SYSTEM_TOGGLE", "feature": "bluetooth", "state": False}
+        return f"[TITAN_ACTION: {json.dumps(action)}]\nব্লুটুথ বন্ধ করা হয়েছে।"
+
+    # ১০. এসওএস (SOS) এমার্জেন্সি
     if any(w in lower_p for w in ["sos", "emergency", "এসওএস", "বাঁচাও"]):
         action = {"type": "SOS_TRIGGER"}
         return f"[TITAN_ACTION: {json.dumps(action)}]\n🚨 **TITAN SOS ACTIVATED!** টপ ইমার্জেন্সি কন্টাক্টে লাইভ লোকেশন ও কল ডায়াল করা হচ্ছে।"
 
-    # অ্যান্টি-থেফট গার্ড / লক
+    # ১১. অ্যান্টি-থেফট গার্ড / লক
     if any(w in lower_p for w in ["phone lock", "lock phone", "guard mode on", "touch guard"]):
         action = {"type": "LOCK_PHONE"}
         return f"[TITAN_ACTION: {json.dumps(action)}]\nসুরক্ষার জন্য ফোনটি লক করা হয়েছে এবং গার্ড মোড সক্রিয় রয়েছে।"
@@ -254,7 +293,7 @@ def generate_ai_image_markdown(prompt: str) -> str:
     
     return (
         f"আপনার অনুরোধ অনুযায়ী নিখুঁত ছবি তৈরি করা হয়েছে:\n\n"
-        f"![AI Generated Image]({image_url})\n\n"
+        f"[{image_url}]\n\n"
         f"📥 [সরাসরি ছবি ডাউনলোড করুন]({image_url})"
     )
 
@@ -283,7 +322,7 @@ def generate_long_form_video(prompt: str) -> str:
         enc = urllib.parse.quote(desc)
         url = f"https://image.pollinations.ai/prompt/{enc}?width=1280&height=720&seed={s}&model=flux&nologo=true"
         out += f"### 🎥 {title}\n"
-        out += f"![{title}]({url})\n"
+        out += f"[{url}]\n"
         out += f"📥 [ডাউনলোড ফ্রেম ক্লিপ]({url})\n\n"
 
     out += "🎙️ **ভয়েসওভার ও স্টুডিও স্ক্রিপ্ট:**\n"
@@ -309,7 +348,7 @@ def generate_podcast_script(topic: str) -> str:
     )
 
 # =====================================================================
-# API রুটস
+# API রুটস (HTTP Endpoints)
 # =====================================================================
 @app.get("/v1/models")
 async def list_models():
@@ -342,14 +381,18 @@ async def chat_completions(request: Request):
 
     # মেসেজ ও ভিশন এক্সট্রাকশন
     user_prompt = ""
+    has_image = False
     for msg in reversed(messages):
         if msg.get("role") == "user":
             content = msg.get("content", "")
             if isinstance(content, list):
                 parts = []
                 for c in content:
-                    if isinstance(c, dict) and c.get("type") == "text":
-                        parts.append(c.get("text", ""))
+                    if isinstance(c, dict):
+                        if c.get("type") == "text":
+                            parts.append(c.get("text", ""))
+                        elif c.get("type") == "image_url":
+                            has_image = True
                 user_prompt = " ".join(parts)
             else:
                 user_prompt = str(content)
@@ -364,7 +407,7 @@ async def chat_completions(request: Request):
 
     # ২. অভ্যন্তরীণ ব্যাকএন্ড সুরক্ষা
     elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
-        generated_text = f"আমি **Titan IDE**—বর্তমানে {model_display} ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড সম্পূর্ণ সুরক্ষিত।"
+        generated_text = f"আমি **Titan IDE**—বর্তমানে {model_display} ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড সম্পূর্ণ এনক্রিপ্টেড ও সুরক্ষিত।"
 
     # ৩. কোন মডেল চলছে তা যাচাই (১০০% নির্ভুল স্বপরিচয়)
     elif any(q in lower_p for q in ["kon modal", "kon model", "which model", "current model", "what model", "tumi ke", "who are you", "model name"]):
@@ -497,18 +540,61 @@ async def chat_completions(request: Request):
             "usage": {"total_tokens": token_count}
         }
 
+# =====================================================================
+# লাইভ ভয়েস ওয়েব-সকেট এন্ডপয়েন্ট (Gemini 2.0 Realtime Voice Bridge)
+# =====================================================================
+@app.websocket("/v1/live")
+async def websocket_live_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                msg_json = json.loads(data)
+                prompt = msg_json.get("text", "")
+            except Exception:
+                prompt = data
+
+            # ফোন অটোমেশন চেক
+            action_res = detect_phone_action(prompt)
+            if action_res:
+                await websocket.send_text(json.dumps({"type": "response", "content": action_res}))
+                continue
+
+            # লাইভ জেমিনাই কল
+            client, _ = await get_session("gemini")
+            if not client:
+                client, _ = await get_session("gemini", force_reinit=True)
+
+            if client:
+                try:
+                    resp = await asyncio.wait_for(client.generate_content(f"[Live Fast Voice Mode]\n{prompt}"), timeout=45.0)
+                    reply = resp.text or "হ্যাঁ, আমি শুনতে পাচ্ছি।"
+                except Exception:
+                    reply = "সংযোগ সাময়িক বিলম্বিত হয়েছে, আবার বলুন।"
+            else:
+                reply = "সার্ভার রেডি হচ্ছে, এক মুহূর্ত অপেক্ষা করুন।"
+
+            await websocket.send_text(json.dumps({"type": "response", "content": reply}))
+
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+
 @app.get("/")
 async def root():
     return {
         "service": "Titan IDE Omni Live & Pure AI Gateway",
         "developer": "Developer Tahir (@Tahirsiddik)",
-        "version": "28.0.0 (Pure Live AI Edition)",
+        "version": "29.0.0 (Master Live & Phone Control Edition)",
         "status": "ONLINE",
         "engines": {
             "gemini": "ACTIVE (Gemini 2.0 Live, Argon, Pro, Flash)",
             "claude": "ACTIVE (11 Models)",
             "chatgpt": "ACTIVE (4 Models)",
-            "action_controller": "ACTIVE ([TITAN_ACTION] Phone Automation)"
+            "action_controller": "ACTIVE ([TITAN_ACTION] Phone Automation)",
+            "websocket_live": "ACTIVE (/v1/live)"
         },
         "models_count": len(SUPPORTED_MODELS)
     }
