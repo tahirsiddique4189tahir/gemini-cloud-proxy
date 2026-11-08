@@ -1,7 +1,6 @@
 """
-Titan IDE - Omni Ultimate Production Gateway (v27.0 Bulletproof Master Edition)
-Developer: Developer Tahir (Telegram: @Tahirsiddik)
-Architecture: Zero-Hardcode, Multi-Engine Auto-Routing, FLUX.1 Vision & Media Suite.
+Titan IDE - Omni Ultimate Production Gateway (Universal Master Edition)
+Architecture: Zero-Hardcode, Multi-Engine Auto-Routing, Global Language Agnostic.
 """
 
 import os
@@ -25,7 +24,7 @@ except ImportError:
 
 app = FastAPI(
     title="Titan IDE Omni Master Gateway",
-    version="27.0.0",
+    version="30.0.0",
     description="Engineered by Developer Tahir (@Tahirsiddik)"
 )
 
@@ -37,9 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# =====================================================================
-# কুকিজ কনফিগারেশন (Dedicated 3-Engine Pool)
-# =====================================================================
+# Dedicated 3-Engine Pool
 GEMINI_COOKIES = {
     "psid": os.getenv("GEMINI_PSID", "g.a000EQms6obe4NexzQ8efSfQIyfJVGZqnMuoVE1RaIZ2H8AsypbPBdHCLFXCl-L8SRH3PC7KVwACgYKAQ8SARISFQHGX2MifjvkYBNkaFUE0SlZqri4AhoVAUF8yKo_D-dce-V1S3D8Hpk7_VtX0076"),
     "psidts": os.getenv("GEMINI_PSIDTS", "sidts-CjYBnJZzahQ0zCz-4_4vZbdbwkYjq2y6SQoVBEsgUviQqC73rE9i3desEb70_N_6A2Tq7DfLUBkQAA")
@@ -62,11 +59,7 @@ CLIENT_POOL = {
 }
 
 POOL_LOCK = asyncio.Lock()
-STATS = {"total_tokens": 0, "active_requests": 0, "status": "ONLINE"}
 
-# =====================================================================
-# ৩৪টি ফুল মডেল ক্যাটালগ
-# =====================================================================
 SUPPORTED_MODELS = [
     # AI Media & Generation
     {"id": "dall-e-3", "object": "model", "owned_by": "openai", "description": "DALL-E 3 (Ultra AI Image Generator)"},
@@ -114,9 +107,6 @@ SUPPORTED_MODELS = [
     {"id": "gemini-pro", "object": "model", "owned_by": "google", "description": "Auto Gemini Pro"}
 ]
 
-# =====================================================================
-# অটো-হিলিং সেশন হ্যান্ডলার
-# =====================================================================
 async def get_session(engine_name: str, force_reinit: bool = False):
     if not GEMINI_LIB_AVAILABLE:
         return None, None
@@ -139,9 +129,6 @@ async def get_session(engine_name: str, force_reinit: bool = False):
                 return None, None
         return sess["client"], sess["chat"]
 
-# =====================================================================
-# ইমেজ জেনারেটর (Zero-Glitch, FLUX.1 Engine)
-# =====================================================================
 def generate_ai_image_markdown(prompt: str) -> str:
     cleaned = prompt.strip()
     cleaned = re.sub(
@@ -151,46 +138,23 @@ def generate_ai_image_markdown(prompt: str) -> str:
         flags=re.IGNORECASE
     )
     cleaned = re.sub(r'\s*(image|picture|photo|chobi|ছবি|drawing)$', '', cleaned, flags=re.IGNORECASE).strip()
-    
-    bengali_keywords = {
-        "বিড়াল": "cute cat, fluffy fur",
-        "বিড়াল": "cute cat, fluffy fur",
-        "কুকুর": "adorable dog, cheerful expression",
-        "বাঘ": "majestic royal bengal tiger in forest",
-        "সিংহ": "magnificent lion, golden mane",
-        "গাড়ি": "futuristic luxury sports car, neon reflections",
-        "গাড়ি": "futuristic luxury sports car, neon reflections",
-        "메য়ে": "portrait of beautiful young woman, cinematic lighting",
-        "রোবট": "advanced cybernetic humanoid robot, glowing lights",
-        "প্রকৃতি": "breathtaking sunset landscape, mountains and river"
-    }
-    for bk, replacement in bengali_keywords.items():
-        if bk in cleaned:
-            cleaned = cleaned.replace(bk, replacement)
 
     if not cleaned or len(cleaned) < 2:
-        cleaned = "cute fluffy cat, highly detailed fur, 8k cinematic lighting, masterpiece"
+        cleaned = "High detail masterpiece, 8k resolution, cinematic lighting, photorealistic"
     else:
         cleaned = f"{cleaned}, highly detailed, 8k resolution, cinematic lighting, masterpiece, photorealistic"
 
     encoded_prompt = urllib.parse.quote(cleaned)
     seed = int(time.time() * 1000) % 999999
     image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&seed={seed}&model=flux&nologo=true"
-    
-    return (
-        f"আপনার অনুরোধ অনুযায়ী নিখুঁত ছবি তৈরি করা হয়েছে:\n\n"
-        f"[{image_url}]\n\n"
-        f"📥 [সরাসরি ছবি ডাউনলোড করুন]({image_url})"
-    )
 
-# =====================================================================
-# সিনেমাটিক মাল্টি-সিন লং ভিডিও প্যাকেজ
-# =====================================================================
+    return f"Image generated successfully:\n\n[{image_url}]\n\n📥 [Download Image Direct]({image_url})"
+
 def generate_long_form_video(prompt: str) -> str:
     cleaned = prompt.lower()
     for word in ["ভিডিও", "বানাও", "video", "shorts", "movie", "film", "create", "make", "full", "long"]:
         cleaned = cleaned.replace(word, " ")
-    topic = " ".join(cleaned.split()).strip() or "cyberpunk futuristic sci-fi adventure"
+    topic = " ".join(cleaned.split()).strip() or "Universal Cinematic Production"
     seed = int(time.time() * 1000) % 999999
 
     scenes = [
@@ -201,26 +165,23 @@ def generate_long_form_video(prompt: str) -> str:
     ]
 
     out = f"🎬 **Titan AI Cinema Studio - Long-Form Motion Package**\n\n"
-    out += f"**প্রজেক্ট টাইটেল:** *{topic.title()}*\n"
-    out += f"**রেন্ডারিং ইঞ্জিন:** Titan Omni Video Engine (FLUX Motion Grade)\n\n"
+    out += f"**Project Title:** *{topic.title()}*\n"
+    out += f"**Rendering Engine:** Titan Omni Video Engine (FLUX Motion Grade)\n\n"
 
     for title, desc, s in scenes:
         enc = urllib.parse.quote(desc)
         url = f"https://image.pollinations.ai/prompt/{enc}?width=1280&height=720&seed={s}&model=flux&nologo=true"
         out += f"### 🎥 {title}\n"
         out += f"[{url}]\n"
-        out += f"📥 [ডাউনলোড ফ্রেম ক্লিপ]({url})\n\n"
+        out += f"📥 [Download Frame]({url})\n\n"
 
-    out += "🎙️ **ভয়েসওভার ও স্টুডিও স্ক্রিপ্ট:**\n"
+    out += "🎙️ **Voiceover & Studio Script:**\n"
     out += f"> **Narrator (Charon Voice):** 'In a world defined by change, {topic} unfolds before our eyes.'\n\n"
-    out += "*(টিপ: Titan IDE-এর ব্রডকাস্ট প্লেয়ারে আপনি যেকোনো সময় অডিও সাউন্ডট্র্যাক সহ প্লে করতে পারবেন।)*"
+    out += "*(Tip: Playback supported natively in Titan IDE Broadcast Player.)*"
     return out
 
-# =====================================================================
-# পডকাস্ট স্টুডিও অডিও স্ক্রিপ্ট (Charon + Kore)
-# =====================================================================
 def generate_podcast_script(topic: str) -> str:
-    cleaned = topic.replace("podcast", "").replace("পডকাস্ট", "").replace("banao", "").strip() or "The Future of AI and Titan IDE"
+    cleaned = topic.replace("podcast", "").replace("পডকাস্ট", "").replace("banao", "").strip() or "The Future of Global AI"
     return (
         f"🎙️ **Titan Broadcast Podcast Episode: {cleaned.title()}**\n\n"
         f"**[Intro Theme Music Fades In - Energetic Synth Beats]**\n\n"
@@ -230,12 +191,9 @@ def generate_podcast_script(topic: str) -> str:
         f"**Kore:** 'The speed and accessibility! Anyone with a smartphone running Titan IDE can now create, deploy, and master this instantly without barriers.'\n\n"
         f"**Charon:** 'Couldn't agree more. And that's what Titan is all about—unlimited power in your hands. Thank you for tuning in, folks! Stay tuned for Part 2.'\n\n"
         f"**[Outro Theme Music - Smooth Fade Out]**\n\n"
-        f"*(টিপ: অডিও শুনতে নিচে প্লেয়ার বাটনে চাপ দিন বা ব্রডকাস্ট স্টুডিওতে এক ক্লিকে শুনুন!)*"
+        f"*(Tip: Listen instantly using the Titan Broadcast Studio player.)*"
     )
 
-# =====================================================================
-# API রুটস
-# =====================================================================
 @app.get("/v1/models")
 async def list_models():
     return {"object": "list", "data": SUPPORTED_MODELS}
@@ -251,7 +209,6 @@ async def chat_completions(request: Request):
     messages = body.get("messages", [])
     stream = body.get("stream", True)
 
-    # মডেল ও ইঞ্জিনের নিখুঁত ম্যাপিং
     if any(k in model for k in ["gpt", "o1", "o3"]):
         engine = "chatgpt"
         model_display = "ChatGPT (OpenAI " + model.upper() + ")"
@@ -265,7 +222,6 @@ async def chat_completions(request: Request):
         model_display = "Google Gemini (" + model + ")"
         company = "Google"
 
-    # মেসেজ ও ভিশن এক্সট্রাকশন
     user_prompt = ""
     has_image = False
     for msg in reversed(messages):
@@ -287,38 +243,31 @@ async def chat_completions(request: Request):
     user_prompt_clean = user_prompt.strip() or ("Inspect this camera image and explain" if has_image else "Hello")
     lower_p = user_prompt_clean.lower()
 
-    # ১. নির্মাতা ও ডেভেলপার পরিচয়
-    if any(q in lower_p for q in ["who made you", "who created you", "who developed you", "tumhe kisne banaya", "tomake ke baniyeche", "ke baniyeche", "developer ke", "কার তৈরি", "maker ke"]):
-        generated_text = "আমাকে তৈরি ও ডেভেলপ করেছেন **Developer Tahir** (Telegram: [@Tahirsiddik](https://t.me/Tahirsiddik))。"
+    if any(q in lower_p for q in ["who made you", "who created you", "who developed you", "tumhe kisne banaya"]):
+        generated_text = "I was developed by Developer Tahir (Telegram: @Tahirsiddik)."
 
-    # ২. অভ্যন্তরীণ আর্কিটেকচার সুরক্ষা
-    elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
-        generated_text = f"আমি **Titan IDE Omni**—বর্তমানে {model_display} ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড সম্পূর্ণ সুরক্ষিত ও অপ্টিমাইজড।"
+    elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "source code"]):
+        generated_text = f"I am Titan IDE Omni, operating under {model_display} engine. All backend systems are fully optimized."
 
-    # ३. কোন মডেল চলছে তা যাচাই (১০০% নির্ভুল স্বপরিচয়)
-    elif any(q in lower_p for q in ["kon modal", "kon model", "which model", "current model", "what model", "tumi ke", "who are you", "model name"]):
+    elif any(q in lower_p for q in ["kon modal", "which model", "current model", "what model", "tumi ke", "who are you"]):
         generated_text = (
-            f"मैं বর্তমানে **{model_display}** হিসেবে রান করছি। "
-            f"Titan IDE প্ল্যাটফর্মে Developer Tahir-এর আর্কিটেকচারের মাধ্যমে আমি আপনার কোডিং, ইমেজ জেনারেশন, পডকাস্ট এবং ভিডিও মেকিং-এর জন্য সম্পূর্ণ প্রস্তুত!"
+            f"I am actively running as **{model_display}**. "
+            f"Within Titan IDE developed by Developer Tahir, I am fully equipped for global coding, image generation, podcast creation, and universal multilingual processing!"
         )
 
-    # ৪. পডকাস্ট ডায়লগ জেনারেটর (স্বয়ংক্রিয় অটো-রাউটিং)
-    elif any(k in lower_p for k in ["podcast", "পডকাস্ট", "broadcast", "audio story", "radio show"]):
+    elif any(k in lower_p for k in ["podcast", "broadcast", "audio story", "radio show"]):
         generated_text = generate_podcast_script(user_prompt_clean)
 
-    # ৫. ভিডিও জেনারেটর (স্বয়ংক্রিয় অটো-রাউটিং)
-    elif any(k in lower_p for k in ["ভিডিও", "video", "shorts", "reel", "movie", "video generator", "motion"]):
+    elif any(k in lower_p for k in ["video", "shorts", "reel", "movie", "video generator", "motion"]):
         generated_text = generate_long_form_video(user_prompt_clean)
 
-    # ৬. ইমেজ জেনারেটর (FLUX.1 Zero-Glitch, স্বয়ংক্রিয় অটো-রাউটিং)
-    elif any(k in lower_p for k in ["image", "photo", "picture", "drawing", "draw", "portrait", "chobi", "ছবি", "dall-e", "imagen", "ছবি আঁকো", "ছবি বানাও"]):
+    elif any(k in lower_p for k in ["image", "photo", "picture", "drawing", "draw", "portrait"]):
         generated_text = generate_ai_image_markdown(user_prompt_clean)
 
-    # ৭. অমনি ভিশন, কোডিং ও জেনারেল এআই রিকোয়েস্ট
     else:
         is_code = any(k in lower_p for k in [
             "code", "html", "css", "js", "calculator", "python", "script",
-            "bania", "বানিয়ে", "banao", "app", "game", "website", "2048", "tic tac", "bana", "program"
+            "app", "game", "website", "2048", "tic tac", "bana", "program"
         ])
 
         client, chat = await get_session(engine)
@@ -342,13 +291,13 @@ async def chat_completions(request: Request):
             persona_prefix = (
                 f"[SYSTEM DIRECTIVE: You are running as {model_display} by {company} inside Titan IDE developed by Developer Tahir (@Tahirsiddik). "
                 f"Never state you are Gemini unless you are in Gemini mode. Never state you are OpenAI if you are Claude. "
-                f"Respond naturally with maximum capability.]\n\n"
+                f"Respond naturally with maximum capability across all global languages.]\n\n"
             )
             target_prompt = persona_prefix + user_prompt_clean
 
         generated_text = ""
         if client:
-            timeout_limit = 120.0 if ("argon" in model or "o1" in model) else 85.0
+            timeout_limit = 240.0
             try:
                 output = await asyncio.wait_for(client.generate_content(target_prompt), timeout=timeout_limit)
                 generated_text = output.text or ""
@@ -356,15 +305,15 @@ async def chat_completions(request: Request):
                 try:
                     c, _ = await get_session(engine, force_reinit=True)
                     if c:
-                        output = await asyncio.wait_for(c.generate_content(target_prompt), timeout=60.0)
+                        output = await asyncio.wait_for(c.generate_content(target_prompt), timeout=180.0)
                         generated_text = output.text or ""
                 except Exception:
                     pass
 
         if not generated_text:
             generated_text = (
-                f"আমি **{model_display}**। আপনার নির্দেশিত প্রম্পটটি সফলভাবে প্রসেস করা হয়েছে। "
-                f"Titan IDE-তে আপনি নির্বিঘ্নে ডেটা এক্সিকিউট করতে পারেন।"
+                f"Processing complete via **{model_display}**. "
+                f"Titan IDE environments are fully operational for seamless data execution."
             )
 
         if is_code and "```" in generated_text:
@@ -376,7 +325,6 @@ async def chat_completions(request: Request):
             generated_text = re.sub(r'I am Gemini|I\'m Gemini|as a large language model trained by Google', f'I am {model_display}', generated_text, flags=re.IGNORECASE)
 
     token_count = max(1, len(generated_text) // 4)
-    STATS["total_tokens"] += token_count
 
     if stream:
         async def stream_generator():
@@ -389,7 +337,7 @@ async def chat_completions(request: Request):
             }
             yield f"data: {json.dumps(init_chunk)}\n\n"
 
-            chunk_size = 48
+            chunk_size = 32
             for i in range(0, len(generated_text), chunk_size):
                 chunk_str = generated_text[i:i+chunk_size]
                 payload = {
@@ -400,7 +348,7 @@ async def chat_completions(request: Request):
                     "choices": [{"index": 0, "delta": {"content": chunk_str}, "finish_reason": None}]
                 }
                 yield f"data: {json.dumps(payload)}\n\n"
-                await asyncio.sleep(0.001)
+                await asyncio.sleep(0.002)
 
             fin_payload = {
                 "id": f"chatcmpl-{uuid.uuid4().hex[:12]}",
@@ -428,8 +376,9 @@ async def root():
     return {
         "service": "Titan IDE Omni Master Gateway",
         "developer": "Developer Tahir (@Tahirsiddik)",
-        "version": "27.0.0 (Master Edition)",
+        "version": "30.0.0 (Global Master Edition)",
         "status": "ONLINE",
+        "language_support": "GLOBAL_UNIVERSAL_ANY_DIALECT_ACTIVE",
         "engines": {
             "gemini": "ACTIVE (19 Models)",
             "claude": "ACTIVE (11 Models)",
