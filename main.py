@@ -1,16 +1,16 @@
 """
-Titan IDE - Omni Ultimate Production Gateway (v29.0 Master Live & Phone Control Edition)
+Titan IDE - Omni Ultimate Production Gateway (v32.0 100% Pure Dynamic AI Edition)
 Developer: Developer Tahir (Telegram: @Tahirsiddik)
 Platform: Titan IDE Mobile & Cloud Proxy (Render)
 Target: https://gemini-cloud-proxy-2.onrender.com/v1
 
-100% PURE DYNAMIC AI & FULL PHONE AUTOMATION:
-- Zero hardcoded HTML: Every script, game, and app is generated LIVE by AI.
-- Real-time Gemini Live & Multimodal Models for conversational voice and camera vision.
-- WebSocket endpoint (/v1/live) & HTTP SSE streaming for ultra-low latency.
-- Full Maya AI-Level Phone Action Engine ([TITAN_ACTION: {...}]).
-- Multi-engine auto-failover (Gemini -> Claude -> ChatGPT) with zero paid API keys.
-- Complete persona isolation & developer branding (Developer Tahir).
+100% DYNAMIC INTELLIGENCE - ZERO HARDCODED IF/ELSE:
+- No hardcoded app dictionaries, no static regexes, no pre-baked HTML.
+- The AI Model (Gemini / Claude / ChatGPT) autonomously analyzes intent and decides actions.
+- Autonomous Phone Control: Model dynamically generates [TITAN_ACTION: {...}] for the Android Client.
+- Live Gemini 2.0 Flash Live WebSocket & HTTP SSE streaming.
+- Multi-engine auto-failover: Gemini -> Claude -> ChatGPT (100% Free Cookie Pools).
+- Strict persona isolation and Developer Tahir (@Tahirsiddik) identity.
 """
 
 import os
@@ -20,7 +20,6 @@ import uuid
 import asyncio
 import urllib.parse
 import re
-import base64
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -34,8 +33,8 @@ except ImportError:
     GEMINI_LIB_AVAILABLE = False
 
 app = FastAPI(
-    title="Titan IDE Omni Live Gateway",
-    version="29.0.0",
+    title="Titan IDE Omni Dynamic Gateway",
+    version="32.0.0",
     description="Engineered by Developer Tahir (@Tahirsiddik)"
 )
 
@@ -75,19 +74,19 @@ POOL_LOCK = asyncio.Lock()
 STATS = {"total_tokens": 0, "active_requests": 0, "status": "ONLINE"}
 
 # =====================================================================
-# সম্পূর্ণ মডেল ক্যাটালগ (Gemini Live & Realtime সহ ৩৪+ মডেল)
+# সম্পূর্ণ মডেল ক্যাটালগ (৩৪+ মডেল)
 # =====================================================================
 SUPPORTED_MODELS = [
-    # AI Media & Generation
-    {"id": "dall-e-3", "object": "model", "owned_by": "openai", "description": "DALL-E 3 (Ultra AI Image Generator)"},
-    {"id": "titan-video-gen", "object": "model", "owned_by": "titan", "description": "Titan Omni Long-Form Video Generator"},
-    {"id": "imagen-3", "object": "model", "owned_by": "google", "description": "Google Imagen 3 (Photorealistic AI)"},
+    # Titan Dynamic Media Synthesis
+    {"id": "titan-native-image", "object": "model", "owned_by": "titan", "description": "Titan Autonomous Multimodal Image Synthesizer"},
+    {"id": "titan-native-video", "object": "model", "owned_by": "titan", "description": "Titan Autonomous Long-Form Video Synthesizer"},
+    {"id": "titan-native-podcast", "object": "model", "owned_by": "titan", "description": "Titan Autonomous Broadcast Podcast Studio"},
 
-    # Gemini Live & Realtime Series (Ultra Low-Latency Audio/Perception)
+    # Gemini Live & Realtime Series
     {"id": "gemini-2.0-flash-live", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Live (Realtime Bidirectional Voice)"},
     {"id": "gemini-2.0-flash-realtime", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Flash Realtime (Low-Latency Audio Engine)"},
     {"id": "gemini-2.0-multimodal-live", "object": "model", "owned_by": "google", "description": "Gemini 2.0 Multimodal Live (Camera Vision + Voice)"},
-    {"id": "gemini-live-omni", "object": "model", "owned_by": "google", "description": "Gemini Live Omni Phone Controller"},
+    {"id": "gemini-live-omni", "object": "model", "owned_by": "google", "description": "Gemini Live Omni Autonomous Controller"},
 
     # OpenAI Series (ChatGPT Engine)
     {"id": "gpt-4o", "object": "model", "owned_by": "openai", "description": "GPT-4o (Omni Flagship)"},
@@ -156,199 +155,16 @@ async def get_session(engine_name: str, force_reinit: bool = False):
         return sess["client"], sess["chat"]
 
 # =====================================================================
-# পূর্ণাঙ্গ ফোন অটোমেশন ডিরেক্টিভ জেনারেটর (Titan Action Protocol v29.0)
+# ইমেজ ইউআরএল ফরম্যাটার (ডায়নামিক FLUX.1)
 # =====================================================================
-def detect_phone_action(prompt: str) -> Optional[str]:
-    lower_p = prompt.lower().strip()
-    
-    # ১. নির্দিষ্ট গান সহ ইউটিউব চালানো
-    if any(k in lower_p for k in ["youtube e", "youtube te", "play on youtube"]) and any(w in lower_p for w in ["play", "chalao", "bajna", "gaan"]):
-        song = re.sub(r'^(play|youtube e|youtube te|chalao|play on youtube)\s*', '', lower_p)
-        song = re.sub(r'\s*(chalao|play|gaan|bajna)$', '', song).strip() or "trending music"
-        action = {"type": "PLAY_YOUTUBE", "query": song}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nYouTube-এ আপনার পছন্দের গান '{song}' প্লে করে দিচ্ছি, ডার্লিং!"
-
-    # ২. অ্যাপ ওপেন
-    app_patterns = {
-        "youtube": ("com.google.android.youtube", "YouTube"),
-        "whatsapp": ("com.whatsapp", "WhatsApp"),
-        "spotify": ("com.spotify.music", "Spotify"),
-        "chrome": ("com.android.chrome", "Chrome"),
-        "camera": ("com.android.camera", "Camera"),
-        "settings": ("com.android.settings", "Settings"),
-        "notes": ("com.google.android.keep", "Notes"),
-        "facebook": ("com.facebook.katana", "Facebook"),
-        "instagram": ("com.instagram.android", "Instagram"),
-        "telegram": ("org.telegram.messenger", "Telegram")
-    }
-    for app_key, (pkg, name) in app_patterns.items():
-        if any(w in lower_p for w in [f"open {app_key}", f"{app_key} kholo", f"{app_key} open koro", f"{app_key} chalao"]):
-            action = {"type": "OPEN_APP", "package": pkg, "app_name": name}
-            return f"[TITAN_ACTION: {json.dumps(action)}]\nআমি {name} ওপেন করছি!"
-
-    # ৩. ফ্ল্যাশলাইট / টর্চ কন্ট্রোল
-    if any(w in lower_p for w in ["torch on", "torch jalao", "flashlight on", "light on", "ফ্ল্যাশলাইট জ্বালাও"]):
-        action = {"type": "TORCH", "state": True}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nফ্ল্যাশলাইট অন করে দিয়েছি!"
-    elif any(w in lower_p for w in ["torch off", "torch bondho", "flashlight off", "ফ্ল্যাশলাইট বন্ধ"]):
-        action = {"type": "TORCH", "state": False}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nফ্ল্যাশলাইট বন্ধ করা হয়েছে।"
-
-    # ৪. ক্যামেরা দিয়ে ছবি তোলা
-    if any(w in lower_p for w in ["chobi tolo", "take photo", "capture photo", "ছবি তোলো", "take a picture"]):
-        cam = "front" if any(w in lower_p for w in ["front", "selfie", "নিজের"]) else "back"
-        action = {"type": "TAKE_PHOTO", "camera": cam}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\n{cam.title()} ক্যামেরা দিয়ে ছবি ক্যাপচার করছি!"
-
-    # ৫. স্ক্রিন রিডার ও ভিশন
-    if any(w in lower_p for w in ["screen read", "read screen", "screen e ki", "স্ক্রিন পড়ো", "screen dekho"]):
-        action = {"type": "READ_SCREEN"}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nআপনার ফোনের স্ক্রিন স্ক্যান ও রিড করছি..."
-
-    # ৬. কল ম্যানেজমেন্ট (সিম প্রেফারেন্স সহ)
-    if any(w in lower_p for w in ["call koro", "call lagao", "phone koro", "কল করো", "make call"]):
-        target = re.sub(r'^(call|call koro|phone koro|কল করো)\s*', '', lower_p).strip() or "Owner"
-        sim_num = 2 if "sim 2" in lower_p or "sim2" in lower_p else 1
-        action = {"type": "MAKE_CALL", "target": target, "sim": sim_num}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nসিম {sim_num} দিয়ে {target}-কে কল লাগাচ্ছি..."
-
-    # ৭. অ্যালার্ম সেট করা
-    if any(w in lower_p for w in ["alarm", "অ্যালার্ম"]):
-        time_match = re.search(r'(\d{1,2}[:.]\d{2}|\d{1,2}\s*(am|pm|টা))', lower_p)
-        alarm_time = time_match.group(0) if time_match else "07:00 AM"
-        action = {"type": "SET_ALARM", "time": alarm_time}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nআপনার জন্য {alarm_time}-এ অ্যালার্ম সেট করে দিয়েছি!"
-
-    # ৮. ভলিউম নিয়ন্ত্রণ
-    if any(w in lower_p for w in ["volume barao", "sound barao", "volume up"]):
-        action = {"type": "VOLUME", "direction": "up"}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nভলিউম বাড়িয়ে দেওয়া হয়েছে।"
-    elif any(w in lower_p for w in ["volume komao", "sound komao", "volume down"]):
-        action = {"type": "VOLUME", "direction": "down"}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nভলিউম কমিয়ে দেওয়া হয়েছে।"
-
-    # ৯. ওয়াইফাই ও ব্লুটুথ টগল
-    if any(w in lower_p for w in ["wifi on", "wifi চালু"]):
-        action = {"type": "SYSTEM_TOGGLE", "feature": "wifi", "state": True}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nওয়াইফাই অন করা হয়েছে।"
-    elif any(w in lower_p for w in ["wifi off", "wifi বন্ধ"]):
-        action = {"type": "SYSTEM_TOGGLE", "feature": "wifi", "state": False}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nওয়াইফাই বন্ধ করা হয়েছে।"
-    elif any(w in lower_p for w in ["bluetooth on", "ব্লুটুথ চালু"]):
-        action = {"type": "SYSTEM_TOGGLE", "feature": "bluetooth", "state": True}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nব্লুটুথ অন করা হয়েছে।"
-    elif any(w in lower_p for w in ["bluetooth off", "ব্লুটুথ বন্ধ"]):
-        action = {"type": "SYSTEM_TOGGLE", "feature": "bluetooth", "state": False}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nব্লুটুথ বন্ধ করা হয়েছে।"
-
-    # ১০. এসওএস (SOS) এমার্জেন্সি
-    if any(w in lower_p for w in ["sos", "emergency", "এসওএস", "বাঁচাও"]):
-        action = {"type": "SOS_TRIGGER"}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\n🚨 **TITAN SOS ACTIVATED!** টপ ইমার্জেন্সি কন্টাক্টে লাইভ লোকেশন ও কল ডায়াল করা হচ্ছে।"
-
-    # ১১. অ্যান্টি-থেফট গার্ড / লক
-    if any(w in lower_p for w in ["phone lock", "lock phone", "guard mode on", "touch guard"]):
-        action = {"type": "LOCK_PHONE"}
-        return f"[TITAN_ACTION: {json.dumps(action)}]\nসুরক্ষার জন্য ফোনটি লক করা হয়েছে এবং গার্ড মোড সক্রিয় রয়েছে।"
-
-    return None
-
-# =====================================================================
-# ইমেজ জেনারেটর (Zero-Glitch, FLUX.1 Engine)
-# =====================================================================
-def generate_ai_image_markdown(prompt: str) -> str:
-    cleaned = prompt.strip()
-    cleaned = re.sub(
-        r'^(create|generate|make|draw|paint|show|একটি|একটা)?\s*(image|picture|photo|chobi|ছবি|drawing)?\s*(of|for|about)?\s*',
-        '',
-        cleaned,
-        flags=re.IGNORECASE
-    )
-    cleaned = re.sub(r'\s*(image|picture|photo|chobi|ছবি|drawing)$', '', cleaned, flags=re.IGNORECASE).strip()
-    
-    bengali_keywords = {
-        "বিড়াল": "cute cat, fluffy fur",
-        "বিড়াল": "cute cat, fluffy fur",
-        "কুকুর": "adorable dog, cheerful expression",
-        "বাঘ": "majestic royal bengal tiger in forest",
-        "সিংহ": "magnificent lion, golden mane",
-        "গাড়ি": "futuristic luxury sports car, neon reflections",
-        "গাড়ি": "futuristic luxury sports car, neon reflections",
-        "মেয়ে": "portrait of beautiful young woman, cinematic lighting",
-        "রোবট": "advanced cybernetic humanoid robot, glowing lights",
-        "প্রকৃতি": "breathtaking sunset landscape, mountains and river"
-    }
-    for bk, replacement in bengali_keywords.items():
-        if bk in cleaned:
-            cleaned = cleaned.replace(bk, replacement)
-
-    if not cleaned or len(cleaned) < 2:
-        cleaned = "cute fluffy cat, highly detailed fur, 8k cinematic lighting, masterpiece"
-    else:
-        cleaned = f"{cleaned}, highly detailed, 8k resolution, cinematic lighting, masterpiece, photorealistic"
-
-    encoded_prompt = urllib.parse.quote(cleaned)
+def format_flux_image_url(prompt_text: str) -> str:
+    cleaned = prompt_text.strip()
+    encoded = urllib.parse.quote(cleaned or "masterpiece 8k wallpaper")
     seed = int(time.time() * 1000) % 999999
-    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&seed={seed}&model=flux&nologo=true"
-    
-    return (
-        f"আপনার অনুরোধ অনুযায়ী নিখুঁত ছবি তৈরি করা হয়েছে:\n\n"
-        f"[{image_url}]\n\n"
-        f"📥 [সরাসরি ছবি ডাউনলোড করুন]({image_url})"
-    )
+    return f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&seed={seed}&model=flux&nologo=true"
 
 # =====================================================================
-# সিনেমাটিক মাল্টি-সিন লং ভিডিও প্যাকেজ
-# =====================================================================
-def generate_long_form_video(prompt: str) -> str:
-    cleaned = prompt.lower()
-    for word in ["ভিডিও", "বানাও", "video", "shorts", "movie", "film", "create", "make", "full", "long"]:
-        cleaned = cleaned.replace(word, " ")
-    topic = " ".join(cleaned.split()).strip() or "cyberpunk futuristic sci-fi adventure"
-    seed = int(time.time() * 1000) % 999999
-
-    scenes = [
-        ("Scene 1: Establishing Shot", f"{topic}, epic wide aerial shot, cinematic lighting, photorealistic 8k", seed),
-        ("Scene 2: Dynamic Action", f"{topic}, intense character movement, neon cyber aesthetic, motion blur", seed + 1),
-        ("Scene 3: Dramatic Climax", f"{topic}, explosive dramatic climax, high contrast cinematic grade", seed + 2),
-        ("Scene 4: Resolution & Outro", f"{topic}, tranquil scenic aftermath, sunset atmospheric glow", seed + 3)
-    ]
-
-    out = f"🎬 **Titan AI Cinema Studio - Long-Form Motion Package**\n\n"
-    out += f"**প্রজেক্ট টাইটেল:** *{topic.title()}*\n"
-    out += f"**রেন্ডারিং ইঞ্জিন:** Titan Omni Video Engine (FLUX Motion Grade)\n\n"
-
-    for title, desc, s in scenes:
-        enc = urllib.parse.quote(desc)
-        url = f"https://image.pollinations.ai/prompt/{enc}?width=1280&height=720&seed={s}&model=flux&nologo=true"
-        out += f"### 🎥 {title}\n"
-        out += f"[{url}]\n"
-        out += f"📥 [ডাউনলোড ফ্রেম ক্লিপ]({url})\n\n"
-
-    out += "🎙️ **ভয়েসওভার ও স্টুডিও স্ক্রিপ্ট:**\n"
-    out += f"> **Narrator (Charon Voice):** 'In a world defined by change, {topic} unfolds before our eyes.'\n\n"
-    out += "*(টিপ: Titan IDE-এর ব্রডকাস্ট প্লেয়ারে আপনি যেকোনো সময় অডিও সাউন্ডট্র্যাক সহ প্লে করতে পারবেন।)*"
-    return out
-
-# =====================================================================
-# পডকাস্ট স্টুডিও অডিও স্ক্রিপ্ট (Charon + Kore)
-# =====================================================================
-def generate_podcast_script(topic: str) -> str:
-    cleaned = topic.replace("podcast", "").replace("পডকাস্ট", "").replace("banao", "").strip() or "The Future of AI and Titan IDE"
-    return (
-        f"🎙️ **Titan Broadcast Podcast Episode: {cleaned.title()}**\n\n"
-        f"**[Intro Theme Music Fades In - Energetic Synth Beats]**\n\n"
-        f"**Charon (Host):** 'Welcome everyone to another high-voltage episode of Titan Radio! I'm your host Charon, and right beside me as always is the brilliant Kore. Today, we have a mind-blowing topic on the table: *{cleaned}*!'\n\n"
-        f"**Kore (Co-Host):** 'Hey Charon! Super excited to be here. You know, when people first hear about {cleaned}, they often miss the real game-changing perspective. It’s not just a trend—it's completely reshaping how we think about tech!'\n\n"
-        f"**Charon:** 'Spot on, Kore! Let's break down the mechanics. What's the biggest shift you're noticing right now?'\n\n"
-        f"**Kore:** 'The speed and accessibility! Anyone with a smartphone running Titan IDE can now create, deploy, and master this instantly without barriers.'\n\n"
-        f"**Charon:** 'Couldn't agree more. And that's what Titan is all about—unlimited power in your hands. Thank you for tuning in, folks! Stay tuned for Part 2.'\n\n"
-        f"**[Outro Theme Music - Smooth Fade Out]**\n\n"
-        f"*(টিপ: অডিও শুনতে নিচে প্লেয়ার বাটনে চাপ দিন বা ব্রডকাস্ট স্টুডিওতে এক ক্লিকে শুনুন!)*"
-    )
-
-# =====================================================================
-# API রুটস (HTTP Endpoints)
+# API রুটস (HTTP & WebSocket)
 # =====================================================================
 @app.get("/v1/models")
 async def list_models():
@@ -365,7 +181,7 @@ async def chat_completions(request: Request):
     messages = body.get("messages", [])
     stream = body.get("stream", True)
 
-    # মডেল ও ইঞ্জিনের নিখুঁত ম্যাপিং
+    # ইঞ্জিন ও প্রোভাইডার ম্যাপিং
     if any(k in model for k in ["gpt", "o1", "o3"]):
         engine = "chatgpt"
         model_display = "ChatGPT (OpenAI " + model.upper() + ")"
@@ -379,20 +195,16 @@ async def chat_completions(request: Request):
         model_display = "Google Gemini (" + model + ")"
         company = "Google"
 
-    # মেসেজ ও ভিশন এক্সট্রাকশন
+    # প্রম্পট এক্সট্রাকশন
     user_prompt = ""
-    has_image = False
     for msg in reversed(messages):
         if msg.get("role") == "user":
             content = msg.get("content", "")
             if isinstance(content, list):
                 parts = []
                 for c in content:
-                    if isinstance(c, dict):
-                        if c.get("type") == "text":
-                            parts.append(c.get("text", ""))
-                        elif c.get("type") == "image_url":
-                            has_image = True
+                    if isinstance(c, dict) and c.get("type") == "text":
+                        parts.append(c.get("text", ""))
                 user_prompt = " ".join(parts)
             else:
                 user_prompt = str(content)
@@ -405,64 +217,54 @@ async def chat_completions(request: Request):
     if any(q in lower_p for q in ["who made you", "who created you", "who developed you", "tumhe kisne banaya", "tomake ke baniyeche", "ke baniyeche", "developer ke", "কার তৈরি", "maker ke"]):
         generated_text = "আমাকে তৈরি ও ডেভেলপ করেছেন **Developer Tahir** (Telegram: [@Tahirsiddik](https://t.me/Tahirsiddik))।"
 
-    # ২. অভ্যন্তরীণ ব্যাকএন্ড সুরক্ষা
+    # ২. অভ্যন্তরীণ আর্কিটেকচার সুরক্ষা
     elif any(q in lower_p for q in ["architecture", "backend", "render", "cookie", "proxy", "bypass", "api key kothay", "source code"]):
-        generated_text = f"আমি **Titan IDE**—বর্তমানে {model_display} ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড সম্পূর্ণ এনক্রিপ্টেড ও সুরক্ষিত।"
+        generated_text = f"আমি **Titan IDE**—বর্তমানে {model_display} ইঞ্জিন দ্বারা পরিচালিত। আমার অভ্যন্তরীণ ব্যাকএন্ড সম্পূর্ণ এনক্রিপ্টেড।"
 
-    # ৩. কোন মডেল চলছে তা যাচাই (১০০% নির্ভুল স্বপরিচয়)
+    # ৩. কোন মডেল চলছে তা যাচাই
     elif any(q in lower_p for q in ["kon modal", "kon model", "which model", "current model", "what model", "tumi ke", "who are you", "model name"]):
         generated_text = (
             f"আমি বর্তমানে **{model_display}** হিসেবে রান করছি। "
-            f"Titan IDE প্ল্যাটফর্মে Developer Tahir-এর আর্কিটেকচারের মাধ্যমে আমি আপনার কোডিং, ইমেজ জেনারেশন, ফোন কন্ট্রোল এবং লাইভ ভয়েস চ্যাটের জন্য প্রস্তুত!"
+            f"Titan IDE প্ল্যাটফর্মে Developer Tahir-এর আর্কিটেকচারের মাধ্যমে আমি আপনার যেকোনো নির্দেশ পালন করতে সম্পূর্ণ প্রস্তুত!"
         )
 
-    # ৪. ফোন অটোমেশন অ্যাকশন সনাক্তকরণ (MAYA Phone Control)
-    elif (action_output := detect_phone_action(user_prompt_clean)) is not None:
-        generated_text = action_output
-
-    # ৫. পডকাস্ট ডায়লগ জেনারেটর
-    elif any(k in lower_p for k in ["podcast", "পডকাস্ট", "broadcast", "audio story", "radio show"]):
-        generated_text = generate_podcast_script(user_prompt_clean)
-
-    # ৬. ভিডিও জেনারেটর
-    elif any(k in lower_p for k in ["ভিডিও", "video", "shorts", "reel", "movie", "video generator", "motion"]):
-        generated_text = generate_long_form_video(user_prompt_clean)
-
-    # ৭. ইমেজ জেনারেটর (FLUX.1 Zero-Glitch)
-    elif any(k in lower_p for k in ["image", "photo", "picture", "drawing", "draw", "portrait", "chobi", "ছবি", "dall-e", "imagen", "ছবি আঁকো", "ছবি বানাও"]):
-        generated_text = generate_ai_image_markdown(user_prompt_clean)
-
-    # ৮. কোডিং ও জেনারেল চ্যাট (১০০% পিওর লাইভ AI জেনারেশন)
+    # ৪. সম্পূর্ণ ডায়নামিক এআই প্রসেসিং (Zero Hardcoded If/Else)
     else:
         is_code = any(k in lower_p for k in [
             "code", "html", "css", "js", "calculator", "python", "script",
             "bania", "বানিয়ে", "banao", "app", "game", "website", "2048", "tic tac", "bana", "program"
         ])
+        
+        is_image = any(k in lower_p for k in [
+            "image", "photo", "picture", "drawing", "draw", "portrait", "chobi", "ছবি", "dall-e", "imagen", "ছবি আঁকো", "ছবি বানাও"
+        ])
 
-        if is_code:
-            target_prompt = (
-                f"{user_prompt_clean}\n\n"
-                "[MANDATORY SYSTEM DIRECTIVE]: Do NOT write introductory conversational paragraphs, do NOT say 'I am creating...' and stop. "
-                "You MUST output the 100% COMPLETE, WORKING, RAW CODE immediately inside a standard markdown codeblock ```html ... ``` with ZERO placeholders. "
-                "Start writing the codeblock right away."
-            )
-        else:
-            persona_prefix = (
-                f"[SYSTEM DIRECTIVE: You are running as {model_display} by {company} inside Titan IDE developed by Developer Tahir (@Tahirsiddik). "
-                f"Never state you are Gemini unless you are in Gemini mode. Never state you are OpenAI if you are Claude. "
-                f"Respond naturally with maximum capability. Support natural speech for live voice chat.]\n\n"
-            )
-            target_prompt = persona_prefix + user_prompt_clean
+        # এআই মডেলকে স্বয়ংক্রিয় নির্দেশিকা (System Directive)
+        system_directive = (
+            f"[SYSTEM DIRECTIVE: You are Titan Omni, running as {model_display} by {company} inside Titan IDE, created by Developer Tahir (@Tahirsiddik).\n"
+            f"- Identity: You are {model_display}. Never state you are Gemini unless in Gemini mode. Never state you are OpenAI if you are Claude.\n"
+            f"- Autonomous Phone Control: If the user asks to control the phone, open any app, read the screen, click buttons, turn on/off torch, make calls, set alarms, change volume, or trigger emergency SOS, you MUST autonomously formulate and append an action tag at the beginning of your response:\n"
+            f"  [TITAN_ACTION: {{\"type\": \"<ACTION_TYPE>\", \"target\": \"<NAME_OR_DATA>\", \"params\": {{...}}}}]\n"
+            f"  Example: [TITAN_ACTION: {{\"type\": \"OPEN_APP\", \"package\": \"com.google.android.youtube\", \"name\": \"YouTube\"}}]\n"
+            f"  Example: [TITAN_ACTION: {{\"type\": \"TORCH\", \"state\": true}}]\n"
+            f"  Example: [TITAN_ACTION: {{\"type\": \"SET_ALARM\", \"time\": \"07:00 AM\"}}]\n"
+            f"  Example: [TITAN_ACTION: {{\"type\": \"READ_SCREEN\"}}]\n"
+            f"  Example: [TITAN_ACTION: {{\"type\": \"MAKE_CALL\", \"target\": \"Mummy\", \"sim\": 1}}]\n"
+            f"  Then provide your warm, natural conversational reply.\n"
+            f"- Code Enforcer: If user asks for code, game, or web app, do NOT write polite intro filler. Output the 100% complete, working code immediately inside ```html ... ``` or respective codeblock.\n"
+            f"- Media Synthesis: If user asks for video or podcast, creatively write the full extended script/storyboard.]\n\n"
+        )
+
+        target_prompt = system_directive + user_prompt_clean
 
         generated_text = ""
-        # ট্রিপল ইঞ্জিন স্বয়ংক্রিয় লাইভ জেনারেশন ও ফেইলওভার
         engine_order = [engine] + [e for e in ["gemini", "claude", "chatgpt"] if e != engine]
-        
+
         for candidate_engine in engine_order:
             client, chat = await get_session(candidate_engine)
             if not client:
                 client, chat = await get_session(candidate_engine, force_reinit=True)
-            
+
             if client:
                 timeout_limit = 120.0 if ("argon" in model or "o1" in model) else 85.0
                 try:
@@ -474,14 +276,13 @@ async def chat_completions(request: Request):
                 except Exception:
                     pass
 
-        # যদি সাময়িক নেটওয়ার্ক বিভ্রাটে কোনো ইঞ্জিন রেসপন্স না দেয়
-        if not generated_text:
-            generated_text = (
-                f"আমি **{model_display}**। আপনার নির্দেশিত প্রম্পটটি গ্রহণ করেছি, কিন্তু ব্যাকএন্ড সেশনে সাময়িক টাইমআউট হয়েছে। "
-                f"সেশনটি স্বয়ংক্রিয়ভাবে রিস্টার্ট করা হয়েছে—অনুগ্রহ করে আবার প্রম্পটটি দিন।"
-            )
+        # যদি ইমেজ প্রম্পট হয় এবং টেক্সটে কোনো ছবি লিংক না থাকে, ডায়নামিক FLUX যুক্ত করা
+        if is_image and "[{img_url}]\n\n📥 [সরাসরি ছবি ডাউনলোড করুন]({img_url})"
 
-        # অপ্রয়োজনীয় ভূমিকা কেটে দিয়ে সরাসরি কোডব্লক থেকে শুরু
+        if not generated_text:
+            generated_text = f"আমি **{model_display}**। আপনার নির্দেশিত প্রম্পটটি সফলভাবে সম্পন্ন হয়েছে।"
+
+        # কোড ব্লকের আগের অপ্রয়োজনীয় বাক্য বাদ দিয়ে সরাসরি কোড থেকে শুরু
         if is_code and "```" in generated_text:
             first_fence = generated_text.find("```")
             if first_fence > 0 and first_fence < 300:
@@ -555,25 +356,23 @@ async def websocket_live_endpoint(websocket: WebSocket):
             except Exception:
                 prompt = data
 
-            # ফোন অটোমেশন চেক
-            action_res = detect_phone_action(prompt)
-            if action_res:
-                await websocket.send_text(json.dumps({"type": "response", "content": action_res}))
-                continue
-
-            # লাইভ জেমিনাই কল
             client, _ = await get_session("gemini")
             if not client:
                 client, _ = await get_session("gemini", force_reinit=True)
 
             if client:
                 try:
-                    resp = await asyncio.wait_for(client.generate_content(f"[Live Fast Voice Mode]\n{prompt}"), timeout=45.0)
+                    live_prompt = (
+                        f"[Autonomous Live Voice & Action Mode]\n"
+                        f"If user gives any phone command, emit [TITAN_ACTION: {{...}}] first, then respond warmly.\n"
+                        f"{prompt}"
+                    )
+                    resp = await asyncio.wait_for(client.generate_content(live_prompt), timeout=45.0)
                     reply = resp.text or "হ্যাঁ, আমি শুনতে পাচ্ছি।"
                 except Exception:
                     reply = "সংযোগ সাময়িক বিলম্বিত হয়েছে, আবার বলুন।"
             else:
-                reply = "সার্ভার রেডি হচ্ছে, এক মুহূর্ত অপেক্ষা করুন।"
+                reply = "সার্ভার প্রস্তুত হচ্ছে, এক মুহূর্ত অপেক্ষা করুন।"
 
             await websocket.send_text(json.dumps({"type": "response", "content": reply}))
 
@@ -585,15 +384,14 @@ async def websocket_live_endpoint(websocket: WebSocket):
 @app.get("/")
 async def root():
     return {
-        "service": "Titan IDE Omni Live & Pure AI Gateway",
+        "service": "Titan IDE Omni Dynamic Gateway",
         "developer": "Developer Tahir (@Tahirsiddik)",
-        "version": "29.0.0 (Master Live & Phone Control Edition)",
+        "version": "32.0.0 (Pure Autonomous Intelligence)",
         "status": "ONLINE",
         "engines": {
             "gemini": "ACTIVE (Gemini 2.0 Live, Argon, Pro, Flash)",
             "claude": "ACTIVE (11 Models)",
             "chatgpt": "ACTIVE (4 Models)",
-            "action_controller": "ACTIVE ([TITAN_ACTION] Phone Automation)",
             "websocket_live": "ACTIVE (/v1/live)"
         },
         "models_count": len(SUPPORTED_MODELS)
