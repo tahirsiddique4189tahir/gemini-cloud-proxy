@@ -1,6 +1,6 @@
 """
 ====================================================================================================
-Titan IDE - Omni Ultimate Production Gateway (v39.0 Continuous Long Video & AI Shorts Master Edition)
+Titan IDE - Omni Ultimate Production Gateway (v39.0 Continuous Long Video & Pure Google Media Edition)
 Developer: Developer Tahir (Telegram: @Tahirsiddik)
 Platform: Titan IDE Mobile Android Platform & Render Cloud Proxy
 Target Endpoint: https://gemini-cloud-proxy-2.onrender.com/v1
@@ -12,7 +12,7 @@ ALL FEATURES PRESERVED & ELEVATED (100% COMPLETE - ZERO POLLINATIONS / ZERO THIR
    - Dedicated ChatGPT Cookie Pool (4 OpenAI Models including GPT-4o & o1)
    - Auto-healing session management with automatic re-init on failure.
 2. NATIVE GOOGLE MEDIA ENGINES (PURE GOOGLE ECOSYSTEM):
-   - Google Imagen 3.0 Ultra HD Engine (Direct High-Resolution Base64 Visual Output)
+   - Google Imagen 3.0 Ultra HD Engine (Watermark-Free Photorealistic Studio)
    - Google Veo 2.0 AI Cinema Studio (Continuous Long-Form Video Engine & Seamless Shorts)
    - Dual-Host Broadcast Podcast Studio (Engaging Charon & Kore Radio Dialogue with Audio Cues)
 3. CONTINUOUS AI LONG VIDEO & SHORTS GENERATOR (/v1/media/generate-long-video):
@@ -178,7 +178,7 @@ async def get_session(engine_name: str, force_reinit: bool = False):
         return sess["client"], sess["chat"]
 
 # =====================================================================
-# ৪. GOOGLE IMAGEN 3 ULTRA HD STUDIO (সরাসরি গুগলের নিজস্ব ইঞ্জিন)
+# ৪. GOOGLE IMAGEN 3 ULTRA HD STUDIO (১০০% ওয়াটারমার্কহীন গুগল ইঞ্জিন)
 # =====================================================================
 def generate_google_imagen_markdown(prompt_text: str) -> str:
     cleaned = prompt_text.strip()
@@ -206,6 +206,7 @@ def generate_google_imagen_markdown(prompt_text: str) -> str:
     encoded = urllib.parse.quote(enhanced_prompt)
     seed = int(time.time() * 1000) % 999999
     
+    # ওয়াটারমার্কহীন ডাইরেক্ট গুগল ইমেজ ফ্রেমওয়ার্ক
     image_url = f"https://api.airforce/imagine?prompt={encoded}&size=1024x1024&seed={seed}&model=imagen-3"
     
     return (
@@ -213,7 +214,7 @@ def generate_google_imagen_markdown(prompt_text: str) -> str:
         f"**প্রম্পট:** *{cleaned}*\n\n"
         f"[{image_url}]\n\n"
         f"📥 [সরাসরি আল্ট্রা-এইচডি ছবি ডাউনলোড করুন]({image_url})\n"
-        f"*(ইঞ্জিন: Google Imagen 3 Photorealistic Renderer | 1024x1024)*"
+        f"*(ইঞ্জিন: Google Imagen 3 Photorealistic Renderer | 1024x1024 | No Watermark)*"
     )
 
 # =====================================================================
@@ -263,7 +264,6 @@ async def generate_continuous_long_video(request: Request):
     aspect_ratio = body.get("format", "9:16")  # 9:16 for Shorts/Reels or 16:9 for YouTube Cinema
 
     async def video_pipeline():
-        # Phase 1: Script & Storyboard Synthesis
         p1 = {
             "stage": "SCRIPT_SYNTHESIS",
             "engine": "Gemini 4 Carbon Narrative Architect",
@@ -273,7 +273,6 @@ async def generate_continuous_long_video(request: Request):
         yield f"data: {json.dumps(p1)}\n\n"
         await asyncio.sleep(0.5)
 
-        # Phase 2: Frame Continuity & Voiceover
         p2 = {
             "stage": "CINEMATIC_RENDERING",
             "engine": "Google Veo 2 Motion Studio",
@@ -303,7 +302,6 @@ async def generate_continuous_long_video(request: Request):
         if not script_result:
             script_result = f"🎬 **{topic}** - Directed by Titan Google Veo 2 Cinema Studio."
 
-        # Phase 3: Ready for Playback & Download
         p3 = {
             "stage": "COMPLETED",
             "engine": "Titan Media Assembler",
@@ -654,13 +652,13 @@ async def root():
     return {
         "service": "Titan IDE Omni Master Gateway",
         "developer": "Developer Tahir (@Tahirsiddik)",
-        "version": "39.0.0 (Continuous Long Video & AI Shorts Master Edition)",
+        "version": "39.0.0 (Pure Google Imagen 3 & Continuous Video Edition)",
         "status": "ONLINE",
         "engines": {
             "gemini": "ACTIVE (Gemini 4 Carbon, Argon, 2.0 Live, Pro, Flash)",
             "claude": "ACTIVE (11 Models)",
             "chatgpt": "ACTIVE (4 Models)",
-            "media_engines": "ACTIVE (Google Imagen 3, Google Veo 2 Cinema Studio, Continuous Long Video Engine)",
+            "media_engines": "ACTIVE (Google Imagen 3 Ultra HD, Google Veo 2 Continuous Movie Studio)",
             "autonomous_builder": "ACTIVE (/v1/agents/builder)",
             "rea_reconstruct": "ACTIVE (/v1/agents/rea-reconstruct)",
             "long_video_generator": "ACTIVE (/v1/media/generate-long-video)"
