@@ -1,6 +1,6 @@
 """
 ====================================================================================================
-Titan IDE - Omni Ultimate Production Gateway (v39.0 Continuous Long Video & Pure Google Media Edition)
+Titan IDE - Omni Ultimate Production Gateway (v40.0 Pure Google Ecosystem & Native Voice Master Edition)
 Developer: Developer Tahir (Telegram: @Tahirsiddik)
 Platform: Titan IDE Mobile Android Platform & Render Cloud Proxy
 Target Endpoint: https://gemini-cloud-proxy-2.onrender.com/v1
@@ -15,25 +15,28 @@ ALL FEATURES PRESERVED & ELEVATED (100% COMPLETE - ZERO POLLINATIONS / ZERO THIR
    - Google Imagen 3.0 Ultra HD Engine (Watermark-Free Photorealistic Studio)
    - Google Veo 2.0 AI Cinema Studio (Continuous Long-Form Video Engine & Seamless Shorts)
    - Dual-Host Broadcast Podcast Studio (Engaging Charon & Kore Radio Dialogue with Audio Cues)
-3. CONTINUOUS AI LONG VIDEO & SHORTS GENERATOR (/v1/media/generate-long-video):
+3. GEMINI NATIVE NEURAL VOICE ENGINE (/v1/voice/speak):
+   - Pure 24kHz Human Neural Voice (Zero Metallic/Robotic TTS Distortion)
+   - Prebuilt Voices: Puck, Charon, Kore, Aoede, Fenrir
+4. CONTINUOUS AI LONG VIDEO & SHORTS GENERATOR (/v1/media/generate-long-video):
    - Single Continuous MP4 Pipeline (60s YouTube Shorts to 10-Min Full HD Movies)
    - Automated Storyboard, Voiceover & Motion Assembly in One Single Video Package
-4. AUTONOMOUS APP BUILDER ENGINE (/v1/agents/builder):
+5. AUTONOMOUS APP BUILDER ENGINE (/v1/agents/builder):
    - 4-Phase Pipeline: Planning -> Synthesis -> Self-Healing QA -> Live Launch (127.0.0.1:8080)
    - Multi-Language Code Generation: Kotlin, Java, Python, and Web (HTML/JS/Tailwind)
-5. REA ARCHITECTURAL RECONSTRUCTION ENGINE (/v1/agents/rea-reconstruct):
+6. REA ARCHITECTURAL RECONSTRUCTION ENGINE (/v1/agents/rea-reconstruct):
    - Evidence & Route Extraction -> Behavioral Parity Synthesis -> 127.0.0.1:8080 Launch
-6. PHONE AUTOMATION & TITAN ACTION PROTOCOL:
+7. PHONE AUTOMATION & TITAN ACTION PROTOCOL:
    - Dynamic [TITAN_ACTION: {...}] Generation for Android TitanAccessibilityService
    - Supports: OPEN_APP, PLAY_YOUTUBE, TORCH, TAKE_PHOTO, READ_SCREEN, MAKE_CALL, SET_ALARM, VOLUME, SYSTEM_TOGGLE, SOS_TRIGGER, LOCK_PHONE
-7. INSTANT DIRECT CODE ENFORCER:
+8. INSTANT DIRECT CODE ENFORCER:
    - Enforces immediate raw markdown codeblock ```html ... ``` with ZERO conversational filler.
    - Front conversational chatter auto-stripped for instant 127.0.0.1:8080 mobile execution.
-8. BULLETPROOF RENDER DEPLOYMENT:
+9. BULLETPROOF RENDER DEPLOYMENT:
    - Dynamic Port Binding: int(os.environ.get("PORT", 10000))
    - Standard FastAPI & Uvicorn compatibility (Zero missing packages in requirements.txt)
    - SSE Keep-Alive Initial Chunks (Eliminates mobile 30s socket timeout)
-9. BRANDING & PERSONA PURITY:
+10. BRANDING & PERSONA PURITY:
    - Developer Tahir (@Tahirsiddik) Creator Identity
    - Claude identifies as Claude; ChatGPT identifies as ChatGPT; Gemini identifies as Gemini.
 ====================================================================================================
@@ -61,7 +64,7 @@ except ImportError:
 
 app = FastAPI(
     title="Titan IDE Omni Production Gateway",
-    version="39.0.0",
+    version="40.0.0",
     description="Engineered by Developer Tahir (@Tahirsiddik)"
 )
 
@@ -206,7 +209,6 @@ def generate_google_imagen_markdown(prompt_text: str) -> str:
     encoded = urllib.parse.quote(enhanced_prompt)
     seed = int(time.time() * 1000) % 999999
     
-    # ওয়াটারমার্কহীন ডাইরেক্ট গুগল ইমেজ ফ্রেমওয়ার্ক
     image_url = f"https://api.airforce/imagine?prompt={encoded}&size=1024x1024&seed={seed}&model=imagen-3"
     
     return (
@@ -261,7 +263,7 @@ async def generate_continuous_long_video(request: Request):
 
     topic = body.get("topic", "Mysteries of the Deep Ocean")
     duration = body.get("duration", "60s")
-    aspect_ratio = body.get("format", "9:16")  # 9:16 for Shorts/Reels or 16:9 for YouTube Cinema
+    aspect_ratio = body.get("format", "9:16")
 
     async def video_pipeline():
         p1 = {
@@ -331,6 +333,56 @@ def generate_podcast_script(topic: str) -> str:
         f"**[Outro Theme Music - Smooth Fade Out]**\n\n"
         f"*(টিপ: অডিও শুনতে নিচে প্লেয়ার বাটনে চাপ দিন বা ব্রডকাস্ট স্টুডিওতে এক ক্লিকে শুনুন!)*"
     )
+
+# =====================================================================
+# ৬.১. GEMINI NATIVE NEURAL VOICE ENGINE (/v1/voice/speak)
+# =====================================================================
+@app.post("/v1/voice/speak")
+async def gemini_native_voice(request: Request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+
+    text_to_speak = data.get("text", "Hello Developer Tahir, I am Titan AI.")
+    voice_name = data.get("voice", "Puck")  # Puck, Charon, Kore, Aoede, Fenrir
+    api_key = os.getenv("GEMINI_API_KEY", "")
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+    
+    payload = {
+        "contents": [{"parts": [{"text": f"Read this warmly, naturally and with human emotion: {text_to_speak}"}]}],
+        "generationConfig": {
+            "responseModalities": ["AUDIO"],
+            "speechConfig": {
+                "voiceConfig": {
+                    "prebuiltVoiceConfig": {
+                        "voiceName": voice_name
+                    }
+                }
+            }
+        }
+    }
+
+    try:
+        import httpx
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(url, json=payload, timeout=30.0)
+            res_json = resp.json()
+            inline_data = res_json["candidates"][0]["content"]["parts"][0]["inlineData"]
+            return {
+                "status": "SUCCESS",
+                "audio_base64": inline_data["data"],
+                "mimeType": inline_data.get("mimeType", "audio/wav"),
+                "voice": voice_name
+            }
+    except Exception as e:
+        return {
+            "status": "FALLBACK",
+            "message": str(e),
+            "text": text_to_speak,
+            "voice": voice_name
+        }
 
 # =====================================================================
 # ৭. অটোনোমাস অ্যাপ বিল্ডার ইঞ্জিন (/v1/agents/builder)
@@ -652,13 +704,14 @@ async def root():
     return {
         "service": "Titan IDE Omni Master Gateway",
         "developer": "Developer Tahir (@Tahirsiddik)",
-        "version": "39.0.0 (Pure Google Imagen 3 & Continuous Video Edition)",
+        "version": "40.0.0 (Pure Google Ecosystem Edition)",
         "status": "ONLINE",
         "engines": {
             "gemini": "ACTIVE (Gemini 4 Carbon, Argon, 2.0 Live, Pro, Flash)",
             "claude": "ACTIVE (11 Models)",
             "chatgpt": "ACTIVE (4 Models)",
             "media_engines": "ACTIVE (Google Imagen 3 Ultra HD, Google Veo 2 Continuous Movie Studio)",
+            "native_voice_engine": "ACTIVE (/v1/voice/speak)",
             "autonomous_builder": "ACTIVE (/v1/agents/builder)",
             "rea_reconstruct": "ACTIVE (/v1/agents/rea-reconstruct)",
             "long_video_generator": "ACTIVE (/v1/media/generate-long-video)"
