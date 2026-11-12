@@ -1,3 +1,4 @@
+"""
 ====================================================================================================
 Titan IDE - Omni Ultimate Production Gateway (v41.0 Ultra-Low Latency & True Stream Edition)
 Developer: Developer Tahir (Telegram: @Tahirsiddik)
@@ -28,7 +29,6 @@ import asyncio
 import urllib.parse
 import re
 import base64
-from contextlib import asynccontextmanager
 from typing import List, Dict, Any, Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse, JSONResponse
@@ -92,19 +92,21 @@ async def get_session(engine_name: str, force_reinit: bool = False):
         return sess["client"], sess["chat"]
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # সার্ভার বুট হওয়ামাত্র ব্যাকগ্রাউন্ডে সেশন প্রি-ওয়ার্ম করা
-    asyncio.create_task(get_session("gemini"))
-    yield
-
-
 app = FastAPI(
     title="Titan IDE Omni Production Gateway",
     version="41.0.0",
-    description="Engineered by Developer Tahir (@Tahirsiddik)",
-    lifespan=lifespan
+    description="Engineered by Developer Tahir (@Tahirsiddik)"
 )
+
+
+@app.on_event("startup")
+async def startup_prewarm():
+    async def _safe_warm():
+        try:
+            await get_session("gemini")
+        except Exception:
+            pass
+    asyncio.create_task(_safe_warm())
 
 app.add_middleware(
     CORSMiddleware,
