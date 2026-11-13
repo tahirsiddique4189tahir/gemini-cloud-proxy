@@ -1,4 +1,3 @@
-```python
 """
 ====================================================================================================
 Titan IDE - Omni Ultimate Production Gateway (v49.0 Real MP4 Video Assembler & Custom Frame Studio)
